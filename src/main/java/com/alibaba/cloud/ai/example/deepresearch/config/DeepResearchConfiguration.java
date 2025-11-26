@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.example.deepresearch.config;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.rag.RagProperties;
 import com.alibaba.cloud.ai.example.deepresearch.dispatcher.*;
+import com.alibaba.cloud.ai.example.deepresearch.memory.ShortTermMemoryRepository;
 import com.alibaba.cloud.ai.example.deepresearch.model.enums.ParallelEnum;
 
 import com.alibaba.cloud.ai.example.deepresearch.node.*;
@@ -65,7 +66,7 @@ import com.alibaba.cloud.ai.example.deepresearch.service.McpProviderFactory;
  */
 @Configuration
 @EnableConfigurationProperties({ DeepResearchProperties.class, PythonCoderProperties.class,
-		McpAssignNodeProperties.class, RagProperties.class, ReflectionProperties.class, SmartAgentProperties.class })
+		McpAssignNodeProperties.class, RagProperties.class, ReflectionProperties.class, SmartAgentProperties.class, ShortTermMemoryProperties.class })
 public class DeepResearchConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(DeepResearchConfiguration.class);
@@ -105,6 +106,12 @@ public class DeepResearchConfiguration {
 
 	@Autowired
 	private ReflectionProperties reflectionProperties;
+
+    @Autowired
+    private ShortTermMemoryProperties shortTermMemoryProperties;
+
+    @Autowired
+    private ShortTermMemoryRepository shortTermMemoryRepository;
 
 	@Autowired(required = false)
 	private JinaCrawlerService jinaCrawlerService;
@@ -212,7 +219,8 @@ public class DeepResearchConfiguration {
 
 		StateGraph stateGraph = new StateGraph("deep research", keyStrategyFactory,
 				new DeepResearchStateSerializer(OverAllState::new))
-            .addNode("short_user_role_memory", node_async(new ShortUserRoleMemoryNode(shortMemoryAgent, sessionContextService)))
+            .addNode("short_user_role_memory", node_async(new ShortUserRoleMemoryNode(shortMemoryAgent, sessionContextService,
+                    shortTermMemoryProperties, shortTermMemoryRepository)))
 			.addNode("coordinator", node_async(new CoordinatorNode(coordinatorAgent, sessionContextService)))
 			.addNode("rewrite_multi_query",
 					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder)))

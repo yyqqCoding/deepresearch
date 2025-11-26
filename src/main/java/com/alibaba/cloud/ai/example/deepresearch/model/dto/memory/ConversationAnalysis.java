@@ -1,6 +1,7 @@
 package com.alibaba.cloud.ai.example.deepresearch.model.dto.memory;
 
-import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author benym
@@ -8,23 +9,45 @@ import java.util.Date;
 public class ConversationAnalysis {
 
     /**
-     * 会话ID
+     * 置信度分数
      */
-    private String conversationId;
-
-    /**
-     * 当前置信度分数
-     */
-    private Integer currentConfidenceScore;
+    @JsonProperty("confidenceScore")
+    private Double confidenceScore;
 
     /**
      * 交互次数
      */
+    @JsonProperty("interactionCount")
     private Integer interactionCount;
 
     /**
      * 分析时间
      */
-    private Date analysisDate;
+    @JsonProperty("analysisDate")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private String analysisDate;
 
+    public Double getConfidenceScore() {
+        return confidenceScore;
+    }
+
+    public void setConfidenceScore(Double confidenceScore) {
+        this.confidenceScore = confidenceScore;
+    }
+
+    public Integer getInteractionCount() {
+        return interactionCount;
+    }
+
+    public void setInteractionCount(Integer interactionCount) {
+        this.interactionCount = interactionCount;
+    }
+
+    public String getAnalysisDate() {
+        return analysisDate;
+    }
+
+    public void setAnalysisDate(String analysisDate) {
+        this.analysisDate = analysisDate;
+    }
 }

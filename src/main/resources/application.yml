@@ -118,6 +118,11 @@ spring:
         reflection:
           enabled: true
           max-attempts: 1
+        # 短期记忆配置
+        short-term-memory:
+          enabled: true
+          recent-message-count: 10
+          memory-type: in-memory
 
 logging:
   level:

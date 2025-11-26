@@ -16,6 +16,7 @@
 
 package com.alibaba.cloud.ai.example.deepresearch.util;
 
+import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.ShortUserRoleExtractResult;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -60,7 +61,7 @@ public class TemplateUtil {
 		return systemMessage;
 	}
 
-    public static Message getShortMemoryExtractMessage(OverAllState state, String query, String historyUserMessages) throws IOException {
+    public static Message getShortMemoryExtractMessage(String query, String historyUserMessages) throws IOException {
         // 读取 短期记忆抽取 md 文件
         ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-extract.md");
         String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
@@ -68,6 +69,19 @@ public class TemplateUtil {
         String systemPrompt = template.replace("{{ last_user_message }}", query);
         // 替换 {{ history_user_messages }} 占位符
         systemPrompt = systemPrompt.replace("{{ history_user_messages }}", historyUserMessages);
+        return new SystemMessage(systemPrompt);
+    }
+
+    public static Message getShortMemoryUpdateMessage(ShortUserRoleExtractResult currentExtractResult,
+                                                      ShortUserRoleExtractResult previousExtractResult) throws IOException {
+        // 读取 短期记忆更新 md 文件
+        ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-update.md");
+        String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+        // 替换 {{ current_extract_result }} 占位符
+        String systemPrompt = template.replace("{{ current_extract_result }}", JsonUtil.toJson(currentExtractResult));
+        // 替换 {{ previous_extract_results }} 占位符
+        String previousResultsJson = JsonUtil.toJson(previousExtractResult);
+        systemPrompt = systemPrompt.replace("{{ previous_extract_results }}", previousResultsJson);
         return new SystemMessage(systemPrompt);
     }
 
