@@ -20,7 +20,7 @@ public class ShortTermMemoryProperties {
     /**
      * Number of recent messages to retain in short-term memory
      */
-    private int recentMessageCount = 5;
+    private int recentMessageCount = 10;
 
     /**
      * Type of memory storage

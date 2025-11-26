@@ -1,5 +1,6 @@
 package com.alibaba.cloud.ai.example.deepresearch.model.dto.memory;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
@@ -42,6 +43,20 @@ public class ShortUserRoleExtractResult {
      */
     @JsonProperty("userOverview")
     private String userOverview;
+
+    /**
+     * 创建时间
+     */
+    @JsonProperty("creatTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private String creatTime;
+
+    /**
+     * 更新时间
+     */
+    @JsonProperty("updateTime")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private String updateTime;
 
     public String getUserId() {
         return userId;
@@ -89,5 +104,21 @@ public class ShortUserRoleExtractResult {
 
     public void setUserOverview(String userOverview) {
         this.userOverview = userOverview;
+    }
+
+    public String getCreatTime() {
+        return creatTime;
+    }
+
+    public void setCreatTime(String creatTime) {
+        this.creatTime = creatTime;
+    }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
     }
 }

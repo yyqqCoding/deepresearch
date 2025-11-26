@@ -21,6 +21,10 @@ Extract user role characteristics in real-time during the current conversation t
 - Information Density Preference: Brief vs. detailed responses
 - Interaction Pattern: Question-asking style and engagement level
 
+## Note
+
+If the user's current user message contains a self-description, use the user's description first
+
 ## Output Format
 
 Directly output the raw JSON format of `ShortUserRoleExtractResult` without "```json". The `ShortUserRoleExtractResult` interface is defined as follows:
@@ -29,7 +33,6 @@ Directly output the raw JSON format of `ShortUserRoleExtractResult` without "```
 interface ConversationAnalysis {
     confidenceScore: number; // The confidence score ranges from 0 to 1
     interactionCount: number; // The number of interactions in the current session
-    analysisDate: string; // Analyze the data in YYYY-MM-DD HH:mm:ss format
 }
 
 interface IdentifiedRole {

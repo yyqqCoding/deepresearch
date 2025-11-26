@@ -20,13 +20,6 @@ public class ConversationAnalysis {
     @JsonProperty("interactionCount")
     private Integer interactionCount;
 
-    /**
-     * 分析时间
-     */
-    @JsonProperty("analysisDate")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private String analysisDate;
-
     public Double getConfidenceScore() {
         return confidenceScore;
     }
@@ -41,13 +34,5 @@ public class ConversationAnalysis {
 
     public void setInteractionCount(Integer interactionCount) {
         this.interactionCount = interactionCount;
-    }
-
-    public String getAnalysisDate() {
-        return analysisDate;
-    }
-
-    public void setAnalysisDate(String analysisDate) {
-        this.analysisDate = analysisDate;
     }
 }
