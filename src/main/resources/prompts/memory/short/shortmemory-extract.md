@@ -36,7 +36,7 @@ interface ConversationAnalysis {
 }
 
 interface IdentifiedRole {
-  possibleOccupations : string[]; // List of possible occupations
+  possibleIdentities : string[]; // List of possible identities, like "software_engineer", "housewife", etc.
   primaryCharacteristics: string[]; // Main character feature tags
   evidenceSummary: string[]; // Summary of identification basis
   confidenceLevel: 'low' | 'medium' | 'medium_high' | 'high'; // Confidence level  

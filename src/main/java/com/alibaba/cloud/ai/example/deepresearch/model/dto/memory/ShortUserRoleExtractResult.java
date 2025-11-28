@@ -8,117 +8,132 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ShortUserRoleExtractResult {
 
-    /**
-     * 用户ID
-     */
-    @JsonProperty("userId")
-    private String userId;
+	/**
+	 * 用户ID
+	 */
+	@JsonProperty("userId")
+	private String userId;
 
-    /**
-     * 会话ID
-     */
-    @JsonProperty("conversationId")
-    private String conversationId;
+	/**
+	 * 会话ID
+	 */
+	@JsonProperty("conversationId")
+	private String conversationId;
 
-    /**
-     * 会话分析信息
-     */
-    @JsonProperty("conversationAnalysis")
-    private ConversationAnalysis conversationAnalysis;
+	/**
+	 * 用户提问内容
+	 */
+	@JsonProperty("userQuery")
+	private String userQuery;
 
-    /**
-     * 角色识别信息
-     */
-    @JsonProperty("identifiedRole")
-    private IdentifiedRole identifiedRole;
+	/**
+	 * 会话分析信息
+	 */
+	@JsonProperty("conversationAnalysis")
+	private ConversationAnalysis conversationAnalysis;
 
-    /**
-     * 交流偏好信息
-     */
-    @JsonProperty("communicationPreferences")
-    private CommunicationPreferences communicationPreferences;
+	/**
+	 * 角色识别信息
+	 */
+	@JsonProperty("identifiedRole")
+	private IdentifiedRole identifiedRole;
 
-    /**
-     * 综合上述实体的用户概述信息
-     */
-    @JsonProperty("userOverview")
-    private String userOverview;
+	/**
+	 * 交流偏好信息
+	 */
+	@JsonProperty("communicationPreferences")
+	private CommunicationPreferences communicationPreferences;
 
-    /**
-     * 创建时间
-     */
-    @JsonProperty("creatTime")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private String creatTime;
+	/**
+	 * 综合上述实体的用户概述信息
+	 */
+	@JsonProperty("userOverview")
+	private String userOverview;
 
-    /**
-     * 更新时间
-     */
-    @JsonProperty("updateTime")
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private String updateTime;
+	/**
+	 * 创建时间
+	 */
+	@JsonProperty("creatTime")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+	private String creatTime;
 
-    public String getUserId() {
-        return userId;
-    }
+	/**
+	 * 更新时间
+	 */
+	@JsonProperty("updateTime")
+	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+	private String updateTime;
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
+	public String getUserId() {
+		return userId;
+	}
 
-    public String getConversationId() {
-        return conversationId;
-    }
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
 
-    public void setConversationId(String conversationId) {
-        this.conversationId = conversationId;
-    }
+	public String getConversationId() {
+		return conversationId;
+	}
 
-    public ConversationAnalysis getConversationAnalysis() {
-        return conversationAnalysis;
-    }
+	public void setConversationId(String conversationId) {
+		this.conversationId = conversationId;
+	}
 
-    public void setConversationAnalysis(ConversationAnalysis conversationAnalysis) {
-        this.conversationAnalysis = conversationAnalysis;
-    }
+	public String getUserQuery() {
+		return userQuery;
+	}
 
-    public IdentifiedRole getIdentifiedRole() {
-        return identifiedRole;
-    }
+	public void setUserQuery(String userQuery) {
+		this.userQuery = userQuery;
+	}
 
-    public void setIdentifiedRole(IdentifiedRole identifiedRole) {
-        this.identifiedRole = identifiedRole;
-    }
+	public ConversationAnalysis getConversationAnalysis() {
+		return conversationAnalysis;
+	}
 
-    public CommunicationPreferences getCommunicationPreferences() {
-        return communicationPreferences;
-    }
+	public void setConversationAnalysis(ConversationAnalysis conversationAnalysis) {
+		this.conversationAnalysis = conversationAnalysis;
+	}
 
-    public void setCommunicationPreferences(CommunicationPreferences communicationPreferences) {
-        this.communicationPreferences = communicationPreferences;
-    }
+	public IdentifiedRole getIdentifiedRole() {
+		return identifiedRole;
+	}
 
-    public String getUserOverview() {
-        return userOverview;
-    }
+	public void setIdentifiedRole(IdentifiedRole identifiedRole) {
+		this.identifiedRole = identifiedRole;
+	}
 
-    public void setUserOverview(String userOverview) {
-        this.userOverview = userOverview;
-    }
+	public CommunicationPreferences getCommunicationPreferences() {
+		return communicationPreferences;
+	}
 
-    public String getCreatTime() {
-        return creatTime;
-    }
+	public void setCommunicationPreferences(CommunicationPreferences communicationPreferences) {
+		this.communicationPreferences = communicationPreferences;
+	}
 
-    public void setCreatTime(String creatTime) {
-        this.creatTime = creatTime;
-    }
+	public String getUserOverview() {
+		return userOverview;
+	}
 
-    public String getUpdateTime() {
-        return updateTime;
-    }
+	public void setUserOverview(String userOverview) {
+		this.userOverview = userOverview;
+	}
 
-    public void setUpdateTime(String updateTime) {
-        this.updateTime = updateTime;
-    }
+	public String getCreatTime() {
+		return creatTime;
+	}
+
+	public void setCreatTime(String creatTime) {
+		this.creatTime = creatTime;
+	}
+
+	public String getUpdateTime() {
+		return updateTime;
+	}
+
+	public void setUpdateTime(String updateTime) {
+		this.updateTime = updateTime;
+	}
+
 }

@@ -2,9 +2,7 @@ package com.alibaba.cloud.ai.example.deepresearch.node;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.ShortTermMemoryProperties;
 import com.alibaba.cloud.ai.example.deepresearch.memory.ShortTermMemoryRepository;
-import com.alibaba.cloud.ai.example.deepresearch.model.SessionHistory;
 import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.ShortUserRoleExtractResult;
-import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
 import com.alibaba.cloud.ai.example.deepresearch.util.JsonUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.TemplateUtil;
@@ -15,10 +13,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -33,178 +33,188 @@ import java.util.*;
  */
 public class ShortUserRoleMemoryNode implements NodeAction {
 
-    private static final Logger logger = LoggerFactory.getLogger(ShortUserRoleMemoryNode.class);
+	private static final Logger logger = LoggerFactory.getLogger(ShortUserRoleMemoryNode.class);
 
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+	private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    private static final String ZONE_ASIA_SHANGHAI = "Asia/Shanghai";
+	private static final String ZONE_ASIA_SHANGHAI = "Asia/Shanghai";
 
-    private static final String USER_ID = "MOCK_USER_ID";
+	private static final String USER_ID = "MOCK_USER_ID";
 
-    private final ChatClient shortMemoryAgent;
+	private final ChatClient shortMemoryAgent;
 
-    private final SessionContextService sessionContextService;
+	private final ShortTermMemoryProperties shortTermMemoryProperties;
 
-    private final ShortTermMemoryProperties shortTermMemoryProperties;
+	private final ShortTermMemoryRepository shortTermMemoryRepository;
 
-    private final ShortTermMemoryRepository shortTermMemoryRepository;
+	private final BeanOutputConverter<ShortUserRoleExtractResult> converter;
 
-    private final BeanOutputConverter<ShortUserRoleExtractResult> converter;
+	public ShortUserRoleMemoryNode(ChatClient shortMemoryAgent, ShortTermMemoryProperties shortTermMemoryProperties,
+			ShortTermMemoryRepository shortTermMemoryRepository) {
+		this.shortMemoryAgent = shortMemoryAgent;
+		this.shortTermMemoryProperties = shortTermMemoryProperties;
+		this.shortTermMemoryRepository = shortTermMemoryRepository;
+		this.converter = new BeanOutputConverter<>(new ParameterizedTypeReference<>() {
+		});
+	}
 
-    public ShortUserRoleMemoryNode(ChatClient shortMemoryAgent, SessionContextService sessionContextService, ShortTermMemoryProperties shortTermMemoryProperties, ShortTermMemoryRepository shortTermMemoryRepository) {
-        this.shortMemoryAgent = shortMemoryAgent;
-        this.sessionContextService = sessionContextService;
-        this.shortTermMemoryProperties = shortTermMemoryProperties;
-        this.shortTermMemoryRepository = shortTermMemoryRepository;
-        this.converter = new BeanOutputConverter<>(new ParameterizedTypeReference<>() {
-        });
-    }
+	@Override
+	public Map<String, Object> apply(OverAllState state) throws Exception {
+		Map<String, Object> updated = new HashMap<>();
+		if (!shortTermMemoryProperties.isEnabled()) {
+			updated.put("short_user_role_next_node", "coordinator");
+			return updated;
+		}
+		logger.info("short_user_role_memory node is running.");
+		ShortTermMemoryProperties.GuideScope guideScope = shortTermMemoryProperties.getGuideScope();
+		try {
+			// 1. 获取最近n轮用户提问
+			String historyUserMessages = buildHistoryUserMessages(state);
+			// 2. 添加extract prompt消息
+			ShortUserRoleExtractResult currentResult = extractShortTermMemory(state, historyUserMessages);
+			// 3. 保存或更新短期记忆
+			ShortUserRoleExtractResult mergeResult = saveOrUpdateShortTermMemory(state, currentResult);
+			logger.info("generated short user role memory: {}", JsonUtil.toJson(mergeResult));
+			if (StringUtils.hasText(historyUserMessages)
+					&& guideScope.equals(ShortTermMemoryProperties.GuideScope.ONCE)) {
+				updated.put("short_user_role_memory", "");
+				updated.put("short_user_role_next_node", "coordinator");
+				return updated;
+			}
+			updated.put("short_user_role_memory", JsonUtil.toJson(mergeResult));
+			updated.put("short_user_role_next_node", "coordinator");
+		}
+		catch (Exception e) {
+			logger.error("short user role memory extraction failed, conversationId: {}", StateUtil.getSessionId(state),
+					e);
+			updated.put("short_user_role_next_node", "coordinator");
+		}
+		return updated;
+	}
 
-    @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
-        logger.info("short_user_role_memory node is running.");
-        if (!shortTermMemoryProperties.isEnabled()) {
-            return Collections.emptyMap();
-        }
-        Map<String, Object> updated = new HashMap<>();
-        try {
-            // 1. 获取最近n轮用户提问
-            String historyUserMessages = buildHistoryUserMessages(state);
-            // 2. 添加extract prompt消息
-            ShortUserRoleExtractResult currentResult = extractShortTermMemory(state, historyUserMessages);
-            // 3. 保存或更新短期记忆
-            ShortUserRoleExtractResult mergeResult = saveOrUpdateShortTermMemory(state, currentResult);
-            updated.put("short_user_role_memory", JsonUtil.toJson(mergeResult));
-            updated.put("short_user_role_next_node", "coordinator");
-            logger.info("generated short user role memory: {}", JsonUtil.toJson(mergeResult));
-        } catch (Exception e) {
-            logger.error("short user role memory extraction failed, conversationId: {}", StateUtil.getSessionId(state), e);
-            updated.put("short_user_role_next_node", "coordinator");
-        }
-        return updated;
-    }
+	/**
+	 * 构建历史用户消息
+	 * @param state state
+	 * @return String
+	 */
+	private String buildHistoryUserMessages(OverAllState state) {
+		List<String> recentUserQueries = shortTermMemoryRepository.getRecentUserQueries(StateUtil.getSessionId(state),
+				shortTermMemoryProperties.getHistoryUserMessagesNum());
+		if (CollectionUtils.isEmpty(recentUserQueries)) {
+			Map<String, Object> metaData = new HashMap<>();
+			metaData.put("create_time", LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)));
+			UserMessage userMessage = UserMessage.builder().text(StateUtil.getQuery(state)).metadata(metaData).build();
+			shortTermMemoryRepository.saveUserQuery(StateUtil.getSessionId(state),
+					Collections.singletonList(userMessage));
+			return "";
+		}
+		StringBuilder historyUserMessages = new StringBuilder();
+		for (int i = 0; i < recentUserQueries.size(); i++) {
+			String userMessage = String.format("第%s轮, 用户消息:%s\n", i + 1, recentUserQueries.get(i));
+			historyUserMessages.append(userMessage);
+		}
+		return historyUserMessages.toString();
+	}
 
-    /**
-     * 构建历史用户消息
-     *
-     * @param state state
-     * @return String
-     */
-    private String buildHistoryUserMessages(OverAllState state) {
-        List<SessionHistory> recentReports = sessionContextService.getRecentReports(StateUtil.getSessionId(state),
-                shortTermMemoryProperties.getRecentMessageCount());
-        if (CollectionUtils.isEmpty(recentReports)) {
-            return "";
-        }
-        StringBuilder historyUserMessages = new StringBuilder();
-        for (int i = 0; i < recentReports.size(); i++) {
-            String userMessage = String.format("第%s轮, 用户消息:%s\n", i + 1, recentReports.get(i).getUserQuery());
-            historyUserMessages.append(userMessage);
-        }
-        return historyUserMessages.toString();
-    }
+	/**
+	 * 提取用户角色短期记忆
+	 * @param state state
+	 * @param historyUserMessages 历史用户提问
+	 * @return ShortUserRoleExtractResult
+	 * @throws IOException IOException
+	 */
+	private ShortUserRoleExtractResult extractShortTermMemory(OverAllState state, String historyUserMessages)
+			throws IOException {
+		List<Message> messages = Collections
+			.singletonList(TemplateUtil.getShortMemoryExtractMessage(StateUtil.getQuery(state), historyUserMessages));
+		logger.debug("extract messages: {}", messages);
+		ChatResponse chatResponse = callShortMemoryAgent(messages);
+		String text = chatResponse.getResult().getOutput().getText();
+		assert text != null;
+		ShortUserRoleExtractResult result = converter.convert(text);
+		assert result != null;
+		fillResult(state, result);
+		return result;
+	}
 
-    /**
-     * 提取用户角色短期记忆
-     *
-     * @param state               state
-     * @param historyUserMessages 历史用户提问
-     * @return ShortUserRoleExtractResult
-     * @throws IOException IOException
-     */
-    private ShortUserRoleExtractResult extractShortTermMemory(OverAllState state, String historyUserMessages) throws IOException {
-        List<Message> messages = Collections.singletonList(
-                TemplateUtil.getShortMemoryExtractMessage(StateUtil.getQuery(state), historyUserMessages)
-        );
-        logger.debug("extract messages: {}", messages);
-        ChatResponse chatResponse = callShortMemoryAgent(messages);
-        String text = chatResponse.getResult().getOutput().getText();
-        assert text != null;
-        ShortUserRoleExtractResult result = converter.convert(text);
-        assert result != null;
-        fillResult(state, result);
-        return result;
-    }
+	/**
+	 * 调用短期记忆Agent
+	 * @param messages 系统消息列表
+	 * @return ChatResponse
+	 */
+	private ChatResponse callShortMemoryAgent(List<Message> messages) {
+		return shortMemoryAgent.prompt(converter.getFormat()).messages(messages).call().chatResponse();
+	}
 
-    /**
-     * 调用短期记忆Agent
-     *
-     * @param messages 系统消息列表
-     * @return ChatResponse
-     */
-    private ChatResponse callShortMemoryAgent(List<Message> messages) {
-        return shortMemoryAgent.prompt(converter.getFormat())
-                .messages(messages)
-                .call()
-                .chatResponse();
-    }
+	/**
+	 * 填充结果对象
+	 * @param state state
+	 * @param result 抽取结果对象
+	 */
+	private void fillResult(OverAllState state, ShortUserRoleExtractResult result) {
+		result.setUserId(USER_ID);
+		result.setUserQuery(StateUtil.getQuery(state));
+		result.setConversationId(StateUtil.getSessionId(state));
+		result.setCreatTime(LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)).format(DATE_TIME_FORMATTER));
+	}
 
-    /**
-     * 填充结果对象
-     *
-     * @param state state
-     * @param result 抽取结果对象
-     */
-    private void fillResult(OverAllState state, ShortUserRoleExtractResult result) {
-        result.setUserId(USER_ID);
-        result.setConversationId(StateUtil.getSessionId(state));
-        result.setCreatTime(LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)).format(DATE_TIME_FORMATTER));
-    }
+	/**
+	 * 保存或更新短期记忆
+	 * @param state state
+	 * @param currentResult 当前提取结果
+	 * @return 融合后结果
+	 * @throws IOException IOException
+	 */
+	private ShortUserRoleExtractResult saveOrUpdateShortTermMemory(OverAllState state,
+			ShortUserRoleExtractResult currentResult) throws IOException {
+		Message historyShortResult = shortTermMemoryRepository.findLatestExtractMessage(USER_ID,
+				StateUtil.getSessionId(state));
+		// 如果没有历史用户角色记忆，直接保存当前结果
+		if (historyShortResult == null) {
+			SystemMessage newShortMemory = new SystemMessage(JsonUtil.toJson(currentResult));
+			shortTermMemoryRepository.saveOrUpdate(USER_ID, StateUtil.getSessionId(state),
+					Collections.singletonList(newShortMemory));
+			return currentResult;
+		}
+		ShortUserRoleExtractResult latestExtract = converter.convert(historyShortResult.getText());
+		Double latestConfidence = Objects.requireNonNull(latestExtract).getConversationAnalysis().getConfidenceScore();
+		Double currentConfidence = currentResult.getConversationAnalysis().getConfidenceScore();
+		// 如果当前结果的置信度>=，融合历史用户角色信息后更新短期记忆，是否真正融合需要由LLM结合历史判定
+		if (currentConfidence >= latestConfidence) {
+			return mergeAndUpdateShortTermMemory(state, currentResult, latestExtract);
+		}
+		return currentResult;
+	}
 
-    /**
-     * 保存或更新短期记忆
-     *
-     * @param state state
-     * @param currentResult 当前提取结果
-     * @return 融合后结果
-     * @throws IOException IOException
-     */
-    private ShortUserRoleExtractResult saveOrUpdateShortTermMemory(OverAllState state, ShortUserRoleExtractResult currentResult) throws IOException {
-        Message historyShortResult = shortTermMemoryRepository.findLatestMessage(USER_ID, StateUtil.getSessionId(state));
-        // 如果没有历史用户角色记忆，直接保存当前结果
-        if (historyShortResult == null) {
-            SystemMessage newShortMemory = new SystemMessage(JsonUtil.toJson(currentResult));
-            shortTermMemoryRepository.saveOrUpdate(USER_ID, StateUtil.getSessionId(state), Collections.singletonList(newShortMemory));
-            return currentResult;
-        }
-        ShortUserRoleExtractResult latestExtract = JsonUtil.fromJson(historyShortResult.getText(), ShortUserRoleExtractResult.class);
-        Double latestConfidence = Objects.requireNonNull(latestExtract).getConversationAnalysis().getConfidenceScore();
-        Double currentConfidence = currentResult.getConversationAnalysis().getConfidenceScore();
-        // 如果当前结果的置信度更高，融合历史用户角色信息后更新短期记忆，是否真正融合需要由LLM结合历史判定
-        if (currentConfidence > latestConfidence) {
-            return mergeAndUpdateShortTermMemory(state, currentResult, latestExtract);
-        }
-        return currentResult;
-    }
+	/**
+	 * 合并并更新短期记忆
+	 * @param state state
+	 * @param current 当前提取接过
+	 * @param latest 最近一次提取结果
+	 * @return ShortUserRoleExtractResult
+	 * @throws IOException IOException
+	 */
+	private ShortUserRoleExtractResult mergeAndUpdateShortTermMemory(OverAllState state,
+			ShortUserRoleExtractResult current, ShortUserRoleExtractResult latest) throws IOException {
+		List<Message> messageTrack = shortTermMemoryRepository.findMessageTrack(USER_ID, StateUtil.getSessionId(state));
+		List<ShortUserRoleExtractResult> historyTracks = new ArrayList<>();
+		if (!CollectionUtils.isEmpty(messageTrack)) {
+			messageTrack.stream().map(message -> converter.convert(message.getText())).forEach(historyTracks::add);
+		}
+		// 组装update prompt消息
+		List<Message> updateMessages = Collections
+			.singletonList(TemplateUtil.getShortMemoryUpdateMessage(current, latest, historyTracks));
+		ChatResponse updateResponse = callShortMemoryAgent(updateMessages);
+		String updateText = updateResponse.getResult().getOutput().getText();
+		assert updateText != null;
+		ShortUserRoleExtractResult mergedResult = converter.convert(updateText);
+		assert mergedResult != null;
+		mergedResult.setUserQuery(StateUtil.getQuery(state));
+		mergedResult.setUpdateTime(LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)).format(DATE_TIME_FORMATTER));
+		SystemMessage mergedMemory = new SystemMessage(JsonUtil.toJson(mergedResult));
+		shortTermMemoryRepository.saveOrUpdate(USER_ID, StateUtil.getSessionId(state),
+				Collections.singletonList(mergedMemory));
+		return mergedResult;
+	}
 
-    /**
-     * 合并并更新短期记忆
-     *
-     * @param state state
-     * @param current 当前提取接过
-     * @param latest 最近一次提取结果
-     * @return ShortUserRoleExtractResult
-     * @throws IOException IOException
-     */
-    private ShortUserRoleExtractResult mergeAndUpdateShortTermMemory(OverAllState state, ShortUserRoleExtractResult current,
-                                                                     ShortUserRoleExtractResult latest) throws IOException {
-        List<Message> messageTrack = shortTermMemoryRepository.findMessageTrack(USER_ID, StateUtil.getSessionId(state));
-        List<ShortUserRoleExtractResult> historyTracks = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(messageTrack)) {
-            messageTrack.stream().map(message -> converter.convert(message.getText())).forEach(historyTracks::add);
-        }
-        // 组装update prompt消息
-        List<Message> updateMessages = Collections.singletonList(
-                TemplateUtil.getShortMemoryUpdateMessage(current, latest, historyTracks)
-        );
-        ChatResponse updateResponse = callShortMemoryAgent(updateMessages);
-        String updateText = updateResponse.getResult().getOutput().getText();
-        assert updateText != null;
-        ShortUserRoleExtractResult mergedResult = converter.convert(updateText);
-        assert mergedResult != null;
-        mergedResult.setUpdateTime(LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)).format(DATE_TIME_FORMATTER));
-        SystemMessage mergedMemory = new SystemMessage(JsonUtil.toJson(mergedResult));
-        shortTermMemoryRepository.saveOrUpdate(USER_ID, StateUtil.getSessionId(state), Collections.singletonList(mergedMemory));
-        return mergedResult;
-    }
 }

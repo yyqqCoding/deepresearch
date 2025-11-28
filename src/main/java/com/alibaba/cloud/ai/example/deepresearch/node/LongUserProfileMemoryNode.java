@@ -13,14 +13,15 @@ import java.util.Map;
  */
 public class LongUserProfileMemoryNode implements NodeAction {
 
-    private final ChatClient longMemoryAgent;
+	private final ChatClient longMemoryAgent;
 
-    public LongUserProfileMemoryNode(ChatClient longMemoryAgent) {
-        this.longMemoryAgent = longMemoryAgent;
-    }
+	public LongUserProfileMemoryNode(ChatClient longMemoryAgent) {
+		this.longMemoryAgent = longMemoryAgent;
+	}
 
-    @Override
-    public Map<String, Object> apply(OverAllState state) throws Exception {
-        return Map.of();
-    }
+	@Override
+	public Map<String, Object> apply(OverAllState state) throws Exception {
+		return Map.of();
+	}
+
 }

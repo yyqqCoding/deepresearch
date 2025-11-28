@@ -225,15 +225,15 @@ public class RagProperties {
 			this.queryTranslationEnabled = queryTranslationEnabled;
 		}
 
-        public boolean isHypotheticalDocumentEmbeddingEnabled() {
-            return hypotheticalDocumentEmbeddingEnabled;
-        }
+		public boolean isHypotheticalDocumentEmbeddingEnabled() {
+			return hypotheticalDocumentEmbeddingEnabled;
+		}
 
-        public void setHypotheticalDocumentEmbeddingEnabled(boolean hypotheticalDocumentEmbeddingEnabled) {
-            this.hypotheticalDocumentEmbeddingEnabled = hypotheticalDocumentEmbeddingEnabled;
-        }
+		public void setHypotheticalDocumentEmbeddingEnabled(boolean hypotheticalDocumentEmbeddingEnabled) {
+			this.hypotheticalDocumentEmbeddingEnabled = hypotheticalDocumentEmbeddingEnabled;
+		}
 
-        public String getQueryTranslationLanguage() {
+		public String getQueryTranslationLanguage() {
 			return queryTranslationLanguage;
 		}
 

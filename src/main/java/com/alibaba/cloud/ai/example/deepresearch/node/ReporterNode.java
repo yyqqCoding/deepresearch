@@ -83,7 +83,7 @@ public class ReporterNode implements NodeAction {
 
 		// 添加消息
 		List<Message> messages = new ArrayList<>();
-        TemplateUtil.addShortUserRoleMemory(messages, state);
+		TemplateUtil.addShortUserRoleMemory(messages, state);
 		// 添加背景调查的信息
 		List<String> backgroundInvestigationResults = state.value("background_investigation_results",
 				(List<String>) null);

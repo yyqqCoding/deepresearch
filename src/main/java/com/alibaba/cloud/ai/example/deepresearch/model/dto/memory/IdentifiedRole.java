@@ -10,59 +10,60 @@ import java.util.List;
  */
 public class IdentifiedRole {
 
-    /**
-     * 可能的职业
-     */
-    @JsonProperty("possibleOccupations")
-    private List<String> possibleOccupations;
+	/**
+	 * 可能的身份
+	 */
+	@JsonProperty("possibleIdentities")
+	private List<String> possibleIdentities;
 
-    /**
-     * 角色特征
-     */
-    @JsonProperty("primaryCharacteristics")
-    private List<String> primaryCharacteristics;
+	/**
+	 * 角色特征
+	 */
+	@JsonProperty("primaryCharacteristics")
+	private List<String> primaryCharacteristics;
 
-    /**
-     * 角色特征证据摘要
-     */
-    @JsonProperty("evidenceSummary")
-    private List<String> evidenceSummary;
+	/**
+	 * 角色特征证据摘要
+	 */
+	@JsonProperty("evidenceSummary")
+	private List<String> evidenceSummary;
 
-    /**
-     * 置信度等级
-     */
-    @JsonProperty("confidenceLevel")
-    private ConfidenceLevel confidenceLevel;
+	/**
+	 * 置信度等级
+	 */
+	@JsonProperty("confidenceLevel")
+	private ConfidenceLevel confidenceLevel;
 
-    public List<String> getPossibleOccupations() {
-        return possibleOccupations;
-    }
+	public List<String> getPossibleIdentities() {
+		return possibleIdentities;
+	}
 
-    public void setPossibleOccupations(List<String> possibleOccupations) {
-        this.possibleOccupations = possibleOccupations;
-    }
+	public void setPossibleIdentities(List<String> possibleIdentities) {
+		this.possibleIdentities = possibleIdentities;
+	}
 
-    public ConfidenceLevel getConfidenceLevel() {
-        return confidenceLevel;
-    }
+	public ConfidenceLevel getConfidenceLevel() {
+		return confidenceLevel;
+	}
 
-    public void setConfidenceLevel(ConfidenceLevel confidenceLevel) {
-        this.confidenceLevel = confidenceLevel;
-    }
+	public void setConfidenceLevel(ConfidenceLevel confidenceLevel) {
+		this.confidenceLevel = confidenceLevel;
+	}
 
-    public List<String> getEvidenceSummary() {
-        return evidenceSummary;
-    }
+	public List<String> getEvidenceSummary() {
+		return evidenceSummary;
+	}
 
-    public void setEvidenceSummary(List<String> evidenceSummary) {
-        this.evidenceSummary = evidenceSummary;
-    }
+	public void setEvidenceSummary(List<String> evidenceSummary) {
+		this.evidenceSummary = evidenceSummary;
+	}
 
-    public List<String> getPrimaryCharacteristics() {
-        return primaryCharacteristics;
-    }
+	public List<String> getPrimaryCharacteristics() {
+		return primaryCharacteristics;
+	}
 
-    public void setPrimaryCharacteristics(List<String> primaryCharacteristics) {
-        this.primaryCharacteristics = primaryCharacteristics;
-    }
+	public void setPrimaryCharacteristics(List<String> primaryCharacteristics) {
+		this.primaryCharacteristics = primaryCharacteristics;
+	}
+
 }

@@ -5,9 +5,10 @@ package com.alibaba.cloud.ai.example.deepresearch.model.enums;
  */
 public enum ResponseFormat {
 
-    CONCISE,
+	CONCISE,
 
-    DETAILED,
+	DETAILED,
 
-    STRUCTURED_WITH_EXAMPLES
+	STRUCTURED_WITH_EXAMPLES
+
 }

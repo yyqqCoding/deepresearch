@@ -10,49 +10,91 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = ShortTermMemoryProperties.PREFIX)
 public class ShortTermMemoryProperties {
 
-    public static final String PREFIX = DeepResearchProperties.PREFIX + ".short-term-memory";
+	public static final String PREFIX = DeepResearchProperties.PREFIX + ".short-term-memory";
 
-    /**
-     * Whether short-term memory is enabled
-     */
-    private boolean enabled = true;
+	/**
+	 * Whether short-term memory is enabled
+	 */
+	private boolean enabled = true;
 
-    /**
-     * Number of recent messages to retain in short-term memory
-     */
-    private int recentMessageCount = 10;
+	/**
+	 * Scope of short-term memory guidance
+	 */
+	private GuideScope guideScope = GuideScope.EVERY;
 
-    /**
-     * Type of memory storage
-     */
-    private MemoryType memoryType = MemoryType.IN_MEMORY;
+	/**
+	 * Similarity threshold for updating short-term memory
+	 */
+	private Double updateSimilarityThreshold = 0.8;
 
-    public static enum  MemoryType{
+	/**
+	 * The number of recent user questions for reference in user role extraction
+	 */
+	private int historyUserMessagesNum = 10;
 
-        IN_MEMORY
-    }
+	/**
+	 * Type of memory storage
+	 */
+	private MemoryType memoryType = MemoryType.IN_MEMORY;
 
-    public boolean isEnabled() {
-        return enabled;
-    }
+	public enum GuideScope {
 
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
+		/**
+		 * Only in the first round of the guiding model
+		 */
+		ONCE,
 
-    public int getRecentMessageCount() {
-        return recentMessageCount;
-    }
+		/**
+		 * Each round will guide the model
+		 */
+		EVERY
 
-    public void setRecentMessageCount(int recentMessageCount) {
-        this.recentMessageCount = recentMessageCount;
-    }
+	}
 
-    public MemoryType getMemoryType() {
-        return memoryType;
-    }
+	public enum MemoryType {
 
-    public void setMemoryType(MemoryType memoryType) {
-        this.memoryType = memoryType;
-    }
+		IN_MEMORY
+
+	}
+
+	public boolean isEnabled() {
+		return enabled;
+	}
+
+	public void setEnabled(boolean enabled) {
+		this.enabled = enabled;
+	}
+
+	public GuideScope getGuideScope() {
+		return guideScope;
+	}
+
+	public void setGuideScope(GuideScope guideScope) {
+		this.guideScope = guideScope;
+	}
+
+	public Double getUpdateSimilarityThreshold() {
+		return updateSimilarityThreshold;
+	}
+
+	public void setUpdateSimilarityThreshold(Double updateSimilarityThreshold) {
+		this.updateSimilarityThreshold = updateSimilarityThreshold;
+	}
+
+	public int getHistoryUserMessagesNum() {
+		return historyUserMessagesNum;
+	}
+
+	public void setHistoryUserMessagesNum(int historyUserMessagesNum) {
+		this.historyUserMessagesNum = historyUserMessagesNum;
+	}
+
+	public MemoryType getMemoryType() {
+		return memoryType;
+	}
+
+	public void setMemoryType(MemoryType memoryType) {
+		this.memoryType = memoryType;
+	}
+
 }

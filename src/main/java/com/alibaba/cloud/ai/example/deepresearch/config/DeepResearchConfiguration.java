@@ -66,7 +66,8 @@ import com.alibaba.cloud.ai.example.deepresearch.service.McpProviderFactory;
  */
 @Configuration
 @EnableConfigurationProperties({ DeepResearchProperties.class, PythonCoderProperties.class,
-		McpAssignNodeProperties.class, RagProperties.class, ReflectionProperties.class, SmartAgentProperties.class, ShortTermMemoryProperties.class })
+		McpAssignNodeProperties.class, RagProperties.class, ReflectionProperties.class, SmartAgentProperties.class,
+		ShortTermMemoryProperties.class })
 public class DeepResearchConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(DeepResearchConfiguration.class);
@@ -92,11 +93,11 @@ public class DeepResearchConfiguration {
 	@Autowired
 	private ChatClient reflectionAgent;
 
-    @Autowired
-    private ChatClient shortMemoryAgent;
+	@Autowired
+	private ChatClient shortMemoryAgent;
 
-    @Autowired
-    private ChatClient longMemoryAgent;
+	@Autowired
+	private ChatClient longMemoryAgent;
 
 	@Autowired
 	private ChatClient.Builder rewriteAndMultiQueryChatClientBuilder;
@@ -107,11 +108,11 @@ public class DeepResearchConfiguration {
 	@Autowired
 	private ReflectionProperties reflectionProperties;
 
-    @Autowired
-    private ShortTermMemoryProperties shortTermMemoryProperties;
+	@Autowired
+	private ShortTermMemoryProperties shortTermMemoryProperties;
 
-    @Autowired
-    private ShortTermMemoryRepository shortTermMemoryRepository;
+	@Autowired
+	private ShortTermMemoryRepository shortTermMemoryRepository;
 
 	@Autowired(required = false)
 	private JinaCrawlerService jinaCrawlerService;
@@ -168,7 +169,7 @@ public class DeepResearchConfiguration {
 		KeyStrategyFactory keyStrategyFactory = () -> {
 			HashMap<String, KeyStrategy> keyStrategyHashMap = new HashMap<>();
 			// 条件边控制：跳转下一个节点
-            keyStrategyHashMap.put("short_user_role_next_node", new ReplaceStrategy());
+			keyStrategyHashMap.put("short_user_role_next_node", new ReplaceStrategy());
 			keyStrategyHashMap.put("coordinator_next_node", new ReplaceStrategy());
 			keyStrategyHashMap.put("rewrite_multi_query_next_node", new ReplaceStrategy());
 			keyStrategyHashMap.put("background_investigation_next_node", new ReplaceStrategy());
@@ -219,8 +220,9 @@ public class DeepResearchConfiguration {
 
 		StateGraph stateGraph = new StateGraph("deep research", keyStrategyFactory,
 				new DeepResearchStateSerializer(OverAllState::new))
-            .addNode("short_user_role_memory", node_async(new ShortUserRoleMemoryNode(shortMemoryAgent, sessionContextService,
-                    shortTermMemoryProperties, shortTermMemoryRepository)))
+			.addNode("short_user_role_memory",
+					node_async(new ShortUserRoleMemoryNode(shortMemoryAgent, shortTermMemoryProperties,
+							shortTermMemoryRepository)))
 			.addNode("coordinator", node_async(new CoordinatorNode(coordinatorAgent, sessionContextService)))
 			.addNode("rewrite_multi_query",
 					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder)))
@@ -238,14 +240,14 @@ public class DeepResearchConfiguration {
 			.addNode("research_team", node_async(new ResearchTeamNode()))
 			.addNode("parallel_executor", node_async(new ParallelExecutorNode(deepResearchProperties)))
 			.addNode("reporter", node_async(new ReporterNode(reporterAgent, reportService, sessionContextService)))
-            .addNode("long_user_profile_memory", node_async(new LongUserProfileMemoryNode(longMemoryAgent)));
+			.addNode("long_user_profile_memory", node_async(new LongUserProfileMemoryNode(longMemoryAgent)));
 
 		// 添加并行节点块
 		configureParallelNodes(stateGraph);
 
 		stateGraph.addEdge(START, "short_user_role_memory")
-            .addConditionalEdges("short_user_role_memory", edge_async(new ShortUserRoleMemoryDispatcher()),
-                    Map.of("coordinator", "coordinator", END, END))
+			.addConditionalEdges("short_user_role_memory", edge_async(new ShortUserRoleMemoryDispatcher()),
+					Map.of("coordinator", "coordinator", END, END))
 			.addConditionalEdges("coordinator", edge_async(new CoordinatorDispatcher()),
 					Map.of("rewrite_multi_query", "rewrite_multi_query", END, END))
 			.addConditionalEdges("rewrite_multi_query", edge_async(new RewriteAndMultiQueryDispatcher()),
@@ -267,7 +269,7 @@ public class DeepResearchConfiguration {
 					Map.of("professional_kb_rag", "professional_kb_rag", "reporter", "reporter", END, END))
 			.addEdge("professional_kb_rag", "reporter")
 			.addEdge("reporter", "long_user_profile_memory")
-            .addEdge("long_user_profile_memory", END);
+			.addEdge("long_user_profile_memory", END);
 
 		GraphRepresentation graphRepresentation = stateGraph.getGraph(GraphRepresentation.Type.PLANTUML,
 				"workflow graph");

@@ -5,9 +5,10 @@ package com.alibaba.cloud.ai.example.deepresearch.model.enums;
  */
 public enum DetailLevel {
 
-    CONCISE,
+	CONCISE,
 
-    BALANCE,
+	BALANCE,
 
-    COMPREHENSIVE
+	COMPREHENSIVE
+
 }

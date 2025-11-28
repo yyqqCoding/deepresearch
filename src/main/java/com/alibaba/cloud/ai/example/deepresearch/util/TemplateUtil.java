@@ -62,31 +62,31 @@ public class TemplateUtil {
 		return systemMessage;
 	}
 
-    public static Message getShortMemoryExtractMessage(String query, String historyUserMessages) throws IOException {
-        // 读取 短期记忆抽取 md 文件
-        ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-extract.md");
-        String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
-        // 替换 {{ last_user_message }} 占位符
-        String systemPrompt = template.replace("{{ last_user_message }}", query);
-        // 替换 {{ history_user_messages }} 占位符
-        systemPrompt = systemPrompt.replace("{{ history_user_messages }}", historyUserMessages);
-        return new SystemMessage(systemPrompt);
-    }
+	public static Message getShortMemoryExtractMessage(String query, String historyUserMessages) throws IOException {
+		// 读取 短期记忆抽取 md 文件
+		ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-extract.md");
+		String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+		// 替换 {{ last_user_message }} 占位符
+		String systemPrompt = template.replace("{{ last_user_message }}", query);
+		// 替换 {{ history_user_messages }} 占位符
+		systemPrompt = systemPrompt.replace("{{ history_user_messages }}", historyUserMessages);
+		return new SystemMessage(systemPrompt);
+	}
 
-    public static Message getShortMemoryUpdateMessage(ShortUserRoleExtractResult currentExtractResult,
-                                                      ShortUserRoleExtractResult previousExtractResult,
-                                                      List<ShortUserRoleExtractResult> historyExtractTracks) throws IOException {
-        // 读取 短期记忆更新 md 文件
-        ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-update.md");
-        String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
-        // 替换 {{ current_extract_result }} 占位符
-        String systemPrompt = template.replace("{{ current_extract_result }}", JsonUtil.toJson(currentExtractResult));
-        // 替换 {{ previous_extract_results }} 占位符
-        systemPrompt = systemPrompt.replace("{{ previous_extract_results }}", JsonUtil.toJson(previousExtractResult));
-        // 替换 {{ history_tracks }} 占位符
-        systemPrompt = systemPrompt.replace("{{ history_extract_track }}", JsonUtil.toJson(historyExtractTracks));
-        return new SystemMessage(systemPrompt);
-    }
+	public static Message getShortMemoryUpdateMessage(ShortUserRoleExtractResult currentExtractResult,
+			ShortUserRoleExtractResult previousExtractResult, List<ShortUserRoleExtractResult> historyExtractTracks)
+			throws IOException {
+		// 读取 短期记忆更新 md 文件
+		ClassPathResource resource = new ClassPathResource("prompts/memory/short/shortmemory-update.md");
+		String template = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+		// 替换 {{ current_extract_result }} 占位符
+		String systemPrompt = template.replace("{{ current_extract_result }}", JsonUtil.toJson(currentExtractResult));
+		// 替换 {{ previous_extract_results }} 占位符
+		systemPrompt = systemPrompt.replace("{{ previous_extract_results }}", JsonUtil.toJson(previousExtractResult));
+		// 替换 {{ history_tracks }} 占位符
+		systemPrompt = systemPrompt.replace("{{ history_extract_track }}", JsonUtil.toJson(historyExtractTracks));
+		return new SystemMessage(systemPrompt);
+	}
 
 	public static Message getOptQueryMessage(OverAllState state) throws IOException {
 		List<String> queries = StateUtil.getOptimizeQueries(state);
@@ -101,14 +101,16 @@ public class TemplateUtil {
 		return userMessage;
 	}
 
-    public static void addShortUserRoleMemory(List<Message> messages, OverAllState state) {
-        String shortUserRoleMemory = state.value("short_user_role_memory", "");
-        if (StringUtils.hasText(shortUserRoleMemory)) {
-            ShortUserRoleExtractResult shortUserRoleExtractResult = JsonUtil.fromJson(shortUserRoleMemory, ShortUserRoleExtractResult.class);
-            if (shortUserRoleExtractResult!=null) {
-                messages.add(new UserMessage("You are having a conversation with " + shortUserRoleExtractResult.getUserOverview()));
-            }
-        }
-    }
+	public static void addShortUserRoleMemory(List<Message> messages, OverAllState state) {
+		String shortUserRoleMemory = state.value("short_user_role_memory", "");
+		if (StringUtils.hasText(shortUserRoleMemory)) {
+			ShortUserRoleExtractResult shortUserRoleExtractResult = JsonUtil.fromJson(shortUserRoleMemory,
+					ShortUserRoleExtractResult.class);
+			if (shortUserRoleExtractResult != null) {
+				messages.add(new UserMessage(
+						"You are having a conversation with " + shortUserRoleExtractResult.getUserOverview()));
+			}
+		}
+	}
 
 }

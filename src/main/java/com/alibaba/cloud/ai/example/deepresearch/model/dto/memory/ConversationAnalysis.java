@@ -8,31 +8,32 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ConversationAnalysis {
 
-    /**
-     * 置信度分数
-     */
-    @JsonProperty("confidenceScore")
-    private Double confidenceScore;
+	/**
+	 * 置信度分数
+	 */
+	@JsonProperty("confidenceScore")
+	private Double confidenceScore;
 
-    /**
-     * 交互次数
-     */
-    @JsonProperty("interactionCount")
-    private Integer interactionCount;
+	/**
+	 * 交互次数
+	 */
+	@JsonProperty("interactionCount")
+	private Integer interactionCount;
 
-    public Double getConfidenceScore() {
-        return confidenceScore;
-    }
+	public Double getConfidenceScore() {
+		return confidenceScore;
+	}
 
-    public void setConfidenceScore(Double confidenceScore) {
-        this.confidenceScore = confidenceScore;
-    }
+	public void setConfidenceScore(Double confidenceScore) {
+		this.confidenceScore = confidenceScore;
+	}
 
-    public Integer getInteractionCount() {
-        return interactionCount;
-    }
+	public Integer getInteractionCount() {
+		return interactionCount;
+	}
 
-    public void setInteractionCount(Integer interactionCount) {
-        this.interactionCount = interactionCount;
-    }
+	public void setInteractionCount(Integer interactionCount) {
+		this.interactionCount = interactionCount;
+	}
+
 }

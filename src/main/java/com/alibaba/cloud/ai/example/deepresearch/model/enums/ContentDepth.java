@@ -5,9 +5,10 @@ package com.alibaba.cloud.ai.example.deepresearch.model.enums;
  */
 public enum ContentDepth {
 
-    OVERVIEW,
+	OVERVIEW,
 
-    PRACTICAL,
+	PRACTICAL,
 
-    CONCEPTUAL,
+	CONCEPTUAL,
+
 }

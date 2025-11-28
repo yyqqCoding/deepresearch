@@ -12,8 +12,9 @@ import static com.alibaba.cloud.ai.graph.StateGraph.END;
  */
 public class ShortUserRoleMemoryDispatcher implements EdgeAction {
 
-    @Override
-    public String apply(OverAllState state) throws Exception {
-        return (String) state.value("short_user_role_next_node", END);
-    }
+	@Override
+	public String apply(OverAllState state) throws Exception {
+		return (String) state.value("short_user_role_next_node", END);
+	}
+
 }

@@ -10,45 +10,46 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class CommunicationPreferences {
 
-    /**
-     * 详细程度
-     */
-    @JsonProperty("detailLevel")
-    private DetailLevel detailLevel;
+	/**
+	 * 详细程度
+	 */
+	@JsonProperty("detailLevel")
+	private DetailLevel detailLevel;
 
-    /**
-     * 内容深度
-     */
-    @JsonProperty("contentDepth")
-    private ContentDepth contentDepth;
+	/**
+	 * 内容深度
+	 */
+	@JsonProperty("contentDepth")
+	private ContentDepth contentDepth;
 
-    /**
-     * 响应格式
-     */
-    @JsonProperty("responseFormat")
-    private ResponseFormat responseFormat;
+	/**
+	 * 响应格式
+	 */
+	@JsonProperty("responseFormat")
+	private ResponseFormat responseFormat;
 
-    public DetailLevel getDetailLevel() {
-        return detailLevel;
-    }
+	public DetailLevel getDetailLevel() {
+		return detailLevel;
+	}
 
-    public void setDetailLevel(DetailLevel detailLevel) {
-        this.detailLevel = detailLevel;
-    }
+	public void setDetailLevel(DetailLevel detailLevel) {
+		this.detailLevel = detailLevel;
+	}
 
-    public ContentDepth getContentDepth() {
-        return contentDepth;
-    }
+	public ContentDepth getContentDepth() {
+		return contentDepth;
+	}
 
-    public void setContentDepth(ContentDepth contentDepth) {
-        this.contentDepth = contentDepth;
-    }
+	public void setContentDepth(ContentDepth contentDepth) {
+		this.contentDepth = contentDepth;
+	}
 
-    public ResponseFormat getResponseFormat() {
-        return responseFormat;
-    }
+	public ResponseFormat getResponseFormat() {
+		return responseFormat;
+	}
 
-    public void setResponseFormat(ResponseFormat responseFormat) {
-        this.responseFormat = responseFormat;
-    }
+	public void setResponseFormat(ResponseFormat responseFormat) {
+		this.responseFormat = responseFormat;
+	}
+
 }

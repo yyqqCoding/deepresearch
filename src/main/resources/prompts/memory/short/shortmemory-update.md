@@ -31,29 +31,12 @@ There are specific guidelines to select which operation to perform:
 1. **Update**: If the current extraction memory are very similar to previous extraction memory, 
                then their features should be merged, and the confidence level should be increased to a certain extent, 
                because this makes the user's role information clearer through context.
+               For example, from a macroscopic perspective, the similarity is greater than {{ update_similarity_threshold }}.
+               Your feature fusion strategy is as follows:
+               For two similar words: such as "student" and "high school student," you should retain "high school student" because it describes the student more accurately.
+               For two somewhat different words, you should retain both.
 - **Example**:
 Current Extract Memory
-```json
-{
-  "conversationAnalysis": {
-    "confidenceScore": 0.75,
-    "interactionCount" : 2
-  },
-  "identifiedRole": {
-    "possibleOccupations": ["software_engineer", "system_architect"],
-    "primaryCharacteristics": ["technical_detailed", "architecture_focused"],
-    "evidenceSummary": ["Used microservices terminology, requested implementation details"],
-    "confidenceLevel": "medium_high"
-  },
-  "communicationPreferences": {
-    "detailLevel": "comprehensive",
-    "contentDepth": "practical",
-    "responseFormat": "structured_with_examples"
-  },
-  "userOverview" : "A senior software engineer or system architect who prefers comprehensive, practical details delivered in structured formats with examples, demonstrating technical depth and architectural focus"
-}
-```
-Previous Extract Memory
 ```json
 {
   "conversationAnalysis" : {
@@ -61,7 +44,7 @@ Previous Extract Memory
     "interactionCount" : 1
   },
   "identifiedRole" : {
-    "possibleOccupations" : [ "software_engineer", "system_architect" ],
+    "possibleIdentities" : [ "software_engineer", "system_architect" ],
     "primaryCharacteristics" : [ "technical_detailed", "architecture_focused" ],
     "evidenceSummary" : ["Asked about high concurrency in a Spring Boot-based e-commerce system, indicating technical depth and architectural focus"],
     "confidenceLevel" : "high"
@@ -74,6 +57,27 @@ Previous Extract Memory
   "userOverview" : "A software engineer or system architect with technical depth and architectural focus seeking practical, structured solutions for high concurrency in a Spring Boot-based e-commerce system"
 }
 ```
+Previous Extract Memory
+```json
+{
+  "conversationAnalysis": {
+    "confidenceScore": 0.75,
+    "interactionCount" : 2
+  },
+  "identifiedRole": {
+    "possibleIdentities": ["engineer", "system_architect"],
+    "primaryCharacteristics": ["technical_detailed", "architecture_focused"],
+    "evidenceSummary": ["Used microservices terminology, requested implementation details"],
+    "confidenceLevel": "medium_high"
+  },
+  "communicationPreferences": {
+    "detailLevel": "comprehensive",
+    "contentDepth": "practical",
+    "responseFormat": "structured_with_examples"
+  },
+  "userOverview" : "A senior software engineer or system architect who prefers comprehensive, practical details delivered in structured formats with examples, demonstrating technical depth and architectural focus"
+}
+```
 
 Sample output:
 ```json
@@ -83,7 +87,7 @@ Sample output:
     "interactionCount": 3
   },
   "identifiedRole": {
-    "possibleOccupations": ["software_engineer", "system_architect"],
+    "possibleIdentities": ["software_engineer", "system_architect"],
     "primaryCharacteristics": ["technical_detailed", "architecture_focused"],
     "evidenceSummary": ["Used microservices terminology, requested implementation details", "Asked about high concurrency in a Spring Boot-based e-commerce system, indicating technical depth and architectural focus"],
     "confidenceLevel": "high"
@@ -106,7 +110,7 @@ Current Extract Memory
     "interactionCount" : 4
   },
   "identifiedRole" : {
-    "possibleOccupations" : [ "parent" ],
+    "possibleIdentities" : [ "parent" ],
     "primaryCharacteristics" : [ "family_oriented", "recipe_seeker" ],
     "evidenceSummary" : ["Asked for a recipe to cook for their child"],
     "confidenceLevel" : "HIGH"
@@ -127,7 +131,7 @@ Previous Extract Memory
     "interactionCount" : 3
   },
   "identifiedRole": {
-    "possibleOccupations": ["software_engineer", "system_architect"],
+    "possibleIdentities": ["software_engineer", "system_architect"],
     "primaryCharacteristics": ["technical_detailed", "architecture_focused"],
     "evidenceSummary": ["Used microservices terminology, requested implementation details"],
     "confidenceLevel": "medium_high"
@@ -149,7 +153,7 @@ History Extract Track
       "interactionCount" : 1
     },
     "identifiedRole": {
-      "possibleOccupations": ["software_engineer"],
+      "possibleIdentities": ["software_engineer"],
       "primaryCharacteristics": ["technical_detailed"],
       "evidenceSummary": ["Asked about database optimization techniques"],
       "confidenceLevel": "medium"
@@ -167,7 +171,7 @@ History Extract Track
       "interactionCount" : 2
     },
     "identifiedRole": {
-      "possibleOccupations": ["software_engineer", "system_architect"],
+      "possibleIdentities": ["software_engineer", "system_architect"],
       "primaryCharacteristics": ["technical_detailed", "architecture_focused"],
       "evidenceSummary": ["Inquired about microservices architecture and scalability"],
       "confidenceLevel": "medium_high"

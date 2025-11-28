@@ -67,8 +67,8 @@ public class PlannerNode implements NodeAction {
 		List<Message> messages = new ArrayList<>();
 		// 1. 添加消息
 		// 1.1 添加预置提示消息
-        TemplateUtil.addShortUserRoleMemory(messages, state);
-        messages.add(TemplateUtil.getMessage("planner", state));
+		TemplateUtil.addShortUserRoleMemory(messages, state);
+		messages.add(TemplateUtil.getMessage("planner", state));
 		// 1.2 添加用户提问
 		messages.add(TemplateUtil.getOptQueryMessage(state));
 		// 1.3 添加背景调查消息

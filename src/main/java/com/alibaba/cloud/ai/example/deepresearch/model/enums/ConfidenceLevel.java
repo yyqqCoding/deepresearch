@@ -5,11 +5,12 @@ package com.alibaba.cloud.ai.example.deepresearch.model.enums;
  */
 public enum ConfidenceLevel {
 
-    LOW,
+	LOW,
 
-    MEDIUM,
+	MEDIUM,
 
-    MEDIUM_HIGH,
+	MEDIUM_HIGH,
 
-    HIGH;
+	HIGH;
+
 }

@@ -62,7 +62,7 @@ public class CoordinatorNode implements NodeAction {
 		List<Message> messages = new ArrayList<>();
 		// 1. 添加消息
 		// 1.1 添加预置提示消息
-        TemplateUtil.addShortUserRoleMemory(messages, state);
+		TemplateUtil.addShortUserRoleMemory(messages, state);
 		messages.add(TemplateUtil.getMessage("coordinator"));
 
 		// 添加前几次同一会话的报告
