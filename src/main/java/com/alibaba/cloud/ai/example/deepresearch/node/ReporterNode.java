@@ -64,16 +64,16 @@ public class ReporterNode implements NodeAction {
 
 	private final SessionContextService sessionContextService;
 
-    private final MessageWindowChatMemory messageWindowChatMemory;
+	private final MessageWindowChatMemory messageWindowChatMemory;
 
 	private static final String RESEARCH_FORMAT = "# Research Requirements\n\n## Task\n\n{0}\n\n## Description\n\n{1}";
 
 	public ReporterNode(ChatClient reporterAgent, ReportService reportService,
-                        SessionContextService sessionContextService, MessageWindowChatMemory messageWindowChatMemory) {
+			SessionContextService sessionContextService, MessageWindowChatMemory messageWindowChatMemory) {
 		this.reporterAgent = reporterAgent;
 		this.reportService = reportService;
 		this.sessionContextService = sessionContextService;
-        this.messageWindowChatMemory = messageWindowChatMemory;
+		this.messageWindowChatMemory = messageWindowChatMemory;
 	}
 
 	@Override
@@ -140,7 +140,7 @@ public class ReporterNode implements NodeAction {
 				try {
 					GraphId graphId = new GraphId(sessionId, threadId);
 					String userQuery = state.value("query", String.class).orElse("UNKNOWN");
-                    messageWindowChatMemory.add(sessionId, new AssistantMessage(finalReport));
+					messageWindowChatMemory.add(sessionId, new AssistantMessage(finalReport));
 					sessionContextService.addSessionHistory(graphId,
 							SessionHistory.builder().graphId(graphId).userQuery(userQuery).report(finalReport).build());
 					logger.info("Report saved successfully, Thread ID: {}", threadId);

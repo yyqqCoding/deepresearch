@@ -53,20 +53,21 @@ public class RewriteAndMultiQueryNode implements NodeAction {
 
 	private final QueryTransformer queryTransformer;
 
-    private final ShortTermMemoryRepository shortTermMemoryRepository;
+	private final ShortTermMemoryRepository shortTermMemoryRepository;
 
-    private final ShortTermMemoryProperties shortTermMemoryProperties;
+	private final ShortTermMemoryProperties shortTermMemoryProperties;
 
 	ChatClient.Builder rewriteAndMultiQueryAgentBuilder;
 
-	public RewriteAndMultiQueryNode(ChatClient.Builder rewriteAndMultiQueryAgentBuilder, ShortTermMemoryRepository shortTermMemoryRepository, ShortTermMemoryProperties shortTermMemoryProperties) {
+	public RewriteAndMultiQueryNode(ChatClient.Builder rewriteAndMultiQueryAgentBuilder,
+			ShortTermMemoryRepository shortTermMemoryRepository, ShortTermMemoryProperties shortTermMemoryProperties) {
 		this.rewriteAndMultiQueryAgentBuilder = rewriteAndMultiQueryAgentBuilder;
 		// 查询重写
 		this.queryTransformer = RewriteQueryTransformer.builder()
 			.chatClientBuilder(rewriteAndMultiQueryAgentBuilder)
 			.build();
-        this.shortTermMemoryRepository = shortTermMemoryRepository;
-        this.shortTermMemoryProperties = shortTermMemoryProperties;
+		this.shortTermMemoryRepository = shortTermMemoryRepository;
+		this.shortTermMemoryProperties = shortTermMemoryProperties;
 	}
 
 	@Override
@@ -77,17 +78,18 @@ public class RewriteAndMultiQueryNode implements NodeAction {
 
 		String queryText = StateUtil.getQuery(state);
 		assert queryText != null;
-        Query query = Query.builder().text(queryText).build();
-        if (shortTermMemoryProperties.isEnabled()) {
-            List<Message> recentUserMessages = shortTermMemoryRepository.getRecentUserMessages(StateUtil.getSessionId(state), null);
-            if (!CollectionUtils.isEmpty(recentUserMessages)) {
-                CompressionQueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()
-                        .chatClientBuilder(rewriteAndMultiQueryAgentBuilder)
-                        .build();
-                Query queryWithHistory = Query.builder().text(queryText).history(recentUserMessages).build();
-                query = compressionQueryTransformer.transform(queryWithHistory);
-            }
-        }
+		Query query = Query.builder().text(queryText).build();
+		if (shortTermMemoryProperties.isEnabled()) {
+			List<Message> recentUserMessages = shortTermMemoryRepository
+				.getRecentUserMessages(StateUtil.getSessionId(state), null);
+			if (!CollectionUtils.isEmpty(recentUserMessages)) {
+				CompressionQueryTransformer compressionQueryTransformer = CompressionQueryTransformer.builder()
+					.chatClientBuilder(rewriteAndMultiQueryAgentBuilder)
+					.build();
+				Query queryWithHistory = Query.builder().text(queryText).history(recentUserMessages).build();
+				query = compressionQueryTransformer.transform(queryWithHistory);
+			}
+		}
 		// 查询重写
 		Query rewriteQuery = queryTransformer.transform(query);
 

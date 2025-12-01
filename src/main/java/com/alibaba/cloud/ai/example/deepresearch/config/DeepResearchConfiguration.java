@@ -112,8 +112,8 @@ public class DeepResearchConfiguration {
 	@Autowired
 	private ShortTermMemoryRepository shortTermMemoryRepository;
 
-    @Autowired
-    private MessageWindowChatMemory messageWindowChatMemory;
+	@Autowired
+	private MessageWindowChatMemory messageWindowChatMemory;
 
 	@Autowired(required = false)
 	private JinaCrawlerService jinaCrawlerService;
@@ -224,9 +224,11 @@ public class DeepResearchConfiguration {
 			.addNode("short_user_role_memory",
 					node_async(new ShortUserRoleMemoryNode(shortMemoryAgent, shortTermMemoryProperties,
 							shortTermMemoryRepository)))
-			.addNode("coordinator", node_async(new CoordinatorNode(coordinatorAgent, sessionContextService, messageWindowChatMemory)))
+			.addNode("coordinator",
+					node_async(new CoordinatorNode(coordinatorAgent, sessionContextService, messageWindowChatMemory)))
 			.addNode("rewrite_multi_query",
-					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder, shortTermMemoryRepository, shortTermMemoryProperties)))
+					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder,
+							shortTermMemoryRepository, shortTermMemoryProperties)))
 			.addNode("background_investigator",
 					node_async(new BackgroundInvestigationNode(jinaCrawlerService, infoCheckService,
 							searchFilterService, questionClassifierService, searchPlatformSelectionService,
@@ -240,7 +242,8 @@ public class DeepResearchConfiguration {
 			.addNode("human_feedback", node_async(new HumanFeedbackNode()))
 			.addNode("research_team", node_async(new ResearchTeamNode()))
 			.addNode("parallel_executor", node_async(new ParallelExecutorNode(deepResearchProperties)))
-			.addNode("reporter", node_async(new ReporterNode(reporterAgent, reportService, sessionContextService, messageWindowChatMemory)));
+			.addNode("reporter", node_async(
+					new ReporterNode(reporterAgent, reportService, sessionContextService, messageWindowChatMemory)));
 
 		// 添加并行节点块
 		configureParallelNodes(stateGraph);

@@ -76,3 +76,18 @@ GET http://localhost:8080/api/reports/build-html?threadId=__default__
 ### 获取所有默认 MCP 服务信息概览
 GET http://localhost:8080/api/mcp/services
 Accept: application/json
+
+
+### 获取会话历史消息
+GET http://localhost:8080/api/user/memory/conversation
+
+
+### 获取用户角色抽取短期记忆轨迹
+GET http://localhost:8080/api/user/memory/track
+
+
+### 获取用户最近一条角色抽取短期记忆
+GET http://localhost:8080/api/user/memory/latest
+
+### 删除用户角色抽取短期记忆
+POST http://localhost:8080/api/user/memory/delete?session_id=__default__

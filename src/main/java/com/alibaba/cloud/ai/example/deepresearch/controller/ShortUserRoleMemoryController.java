@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
+ * 短期记忆控制器
+ *
  * @author benym
  */
 @RestController
@@ -20,19 +22,20 @@ public class ShortUserRoleMemoryController {
 	@Resource
 	private ShortTermMemoryRepository shortTermMemoryRepository;
 
-    @Resource
-    private MessageWindowChatMemory messageWindowChatMemory;
+	@Resource
+	private MessageWindowChatMemory messageWindowChatMemory;
 
-    /**
-     * 获取会话历史消息
-     * @param sessionId 会话Id
-     * @return ResponseEntity<ApiResponse<List<Message>>>
-     */
-    @GetMapping("/conversation")
-    public ResponseEntity<ApiResponse<List<Message>>> getConversationHistory(@RequestParam("session_id") String sessionId){
-        List<Message> messages = messageWindowChatMemory.get(sessionId);
-        return ResponseEntity.ok(ApiResponse.success(messages));
-    }
+	/**
+	 * 获取会话历史消息
+	 * @param sessionId 会话Id
+	 * @return ResponseEntity<ApiResponse<List<Message>>>
+	 */
+	@GetMapping("/conversation")
+	public ResponseEntity<ApiResponse<List<Message>>> getConversationHistory(
+			@RequestParam("session_id") String sessionId) {
+		List<Message> messages = messageWindowChatMemory.get(sessionId);
+		return ResponseEntity.ok(ApiResponse.success(messages));
+	}
 
 	/**
 	 * 获取用户角色抽取短期记忆轨迹
@@ -42,7 +45,8 @@ public class ShortUserRoleMemoryController {
 	 */
 	@GetMapping("/track")
 	public ResponseEntity<ApiResponse<List<Message>>> getUserShortTermMemoryTrack(
-			@RequestParam(value = "user_id") String userId, @RequestParam("session_id") String sessionId) {
+			@RequestParam(value = "user_id", defaultValue = "MOCK_USER_ID") String userId,
+			@RequestParam("session_id") String sessionId) {
 		List<Message> messageTrack = shortTermMemoryRepository.findMessageTrack(userId, sessionId);
 		return ResponseEntity.ok(ApiResponse.success(messageTrack));
 	}
@@ -55,7 +59,8 @@ public class ShortUserRoleMemoryController {
 	 */
 	@GetMapping("/latest")
 	public ResponseEntity<ApiResponse<Message>> getLatestUserShortTermMemory(
-			@RequestParam(value = "user_id") String userId, @RequestParam("session_id") String sessionId) {
+			@RequestParam(value = "user_id", defaultValue = "MOCK_USER_ID") String userId,
+			@RequestParam("session_id") String sessionId) {
 		Message message = shortTermMemoryRepository.findLatestExtractMessage(userId, sessionId);
 		return ResponseEntity.ok(ApiResponse.success(message));
 	}
@@ -67,7 +72,8 @@ public class ShortUserRoleMemoryController {
 	 * @return ResponseEntity<ApiResponse<String>>
 	 */
 	@PostMapping("/delete")
-	public ResponseEntity<ApiResponse<String>> deleteUserShortTermMemory(@RequestParam(value = "user_id") String userId,
+	public ResponseEntity<ApiResponse<String>> deleteUserShortTermMemory(
+			@RequestParam(value = "user_id", defaultValue = "MOCK_USER_ID") String userId,
 			@RequestParam("session_id") String sessionId) {
 		shortTermMemoryRepository.deleteBy(userId, sessionId);
 		return ResponseEntity.ok(ApiResponse.success("User short-term memory deleted successfully"));

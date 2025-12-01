@@ -39,22 +39,22 @@ public class ShortUserRoleExtractInMemory implements ShortTermMemoryRepository {
 		return userId + ":" + conversationId;
 	}
 
-    @Override
-    public List<Message> getRecentUserMessages(String conversationId, Integer limit) {
-        Assert.hasText(conversationId, "conversationId cannot be null or empty");
-        List<UserMessage> messages = userQueryMemory.get(conversationId);
-        if (messages == null || messages.isEmpty()) {
-            return List.of();
-        }
-        List<UserMessage> sortedMessages = new ArrayList<>(messages);
-        sortedMessages.sort(Comparator.comparing(this::resolveCreateTime).reversed());
-        if (limit == null) {
-            return new ArrayList<>(sortedMessages);
-        }
-        return sortedMessages.stream().limit(limit).collect(Collectors.toList());
-    }
+	@Override
+	public List<Message> getRecentUserMessages(String conversationId, Integer limit) {
+		Assert.hasText(conversationId, "conversationId cannot be null or empty");
+		List<UserMessage> messages = userQueryMemory.get(conversationId);
+		if (messages == null || messages.isEmpty()) {
+			return List.of();
+		}
+		List<UserMessage> sortedMessages = new ArrayList<>(messages);
+		sortedMessages.sort(Comparator.comparing(this::resolveCreateTime).reversed());
+		if (limit == null) {
+			return new ArrayList<>(sortedMessages);
+		}
+		return sortedMessages.stream().limit(limit).collect(Collectors.toList());
+	}
 
-    @Override
+	@Override
 	public List<String> getRecentUserQueries(String conversationId, Integer limit) {
 		Assert.hasText(conversationId, "conversationId cannot be null or empty");
 		List<UserMessage> messages = userQueryMemory.get(conversationId);
@@ -63,9 +63,9 @@ public class ShortUserRoleExtractInMemory implements ShortTermMemoryRepository {
 		}
 		List<UserMessage> sortedMessages = new ArrayList<>(messages);
 		sortedMessages.sort(Comparator.comparing(this::resolveCreateTime).reversed());
-        if (limit > 0) {
-            return sortedMessages.stream().limit(limit).map(UserMessage::getText).collect(Collectors.toList());
-        }
+		if (limit > 0) {
+			return sortedMessages.stream().limit(limit).map(UserMessage::getText).collect(Collectors.toList());
+		}
 		return sortedMessages.stream().map(UserMessage::getText).collect(Collectors.toList());
 	}
 
@@ -73,13 +73,14 @@ public class ShortUserRoleExtractInMemory implements ShortTermMemoryRepository {
 	public void saveUserQuery(String conversationId, List<UserMessage> messages) {
 		Assert.hasText(conversationId, "conversationId cannot be null or empty");
 		Assert.notNull(messages, "messages cannot be null");
-        List<UserMessage> userMessages = userQueryMemory.get(conversationId);
-        if (!CollectionUtils.isEmpty(userMessages)) {
-            userMessages.addAll(messages);
-            userQueryMemory.put(conversationId, messages);
-        } else {
-            userQueryMemory.put(conversationId, messages);
-        }
+		List<UserMessage> userMessages = userQueryMemory.get(conversationId);
+		if (!CollectionUtils.isEmpty(userMessages)) {
+			userMessages.addAll(messages);
+			userQueryMemory.put(conversationId, messages);
+		}
+		else {
+			userQueryMemory.put(conversationId, messages);
+		}
 	}
 
 	@Override
@@ -102,13 +103,14 @@ public class ShortUserRoleExtractInMemory implements ShortTermMemoryRepository {
 		Assert.hasText(userId, "userId cannot be null or empty");
 		Assert.hasText(conversationId, "conversationId cannot be null or empty");
 		Assert.notNull(messages, "messages cannot be null");
-        List<Message> trackMessages = shortTermMemoryTrack.get(buildKey(userId, conversationId));
-        if (!CollectionUtils.isEmpty(trackMessages)) {
-            trackMessages.addAll(messages);
-            shortTermMemoryTrack.put(buildKey(userId, conversationId), trackMessages);
-        } else {
-            shortTermMemoryTrack.put(buildKey(userId, conversationId), messages);
-        }
+		List<Message> trackMessages = shortTermMemoryTrack.get(buildKey(userId, conversationId));
+		if (!CollectionUtils.isEmpty(trackMessages)) {
+			trackMessages.addAll(messages);
+			shortTermMemoryTrack.put(buildKey(userId, conversationId), trackMessages);
+		}
+		else {
+			shortTermMemoryTrack.put(buildKey(userId, conversationId), messages);
+		}
 		shortTermMemory.put(buildKey(userId, conversationId), messages.get(0));
 	}
 

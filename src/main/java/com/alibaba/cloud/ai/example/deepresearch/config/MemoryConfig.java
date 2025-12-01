@@ -13,16 +13,17 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MemoryConfig {
 
-    private static final Logger logger = LoggerFactory.getLogger(MemoryConfig.class);
+	private static final Logger logger = LoggerFactory.getLogger(MemoryConfig.class);
 
-    @Bean
-    public MessageWindowChatMemory messageWindowChatMemory() {
-        int maxMessages = 100;
-        logger.info("Initializing InMemory MessageWindowChatMemory with max messages: {}", maxMessages);
-        InMemoryChatMemoryRepository inMemoryChatMemoryRepository = new InMemoryChatMemoryRepository();
-        return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(inMemoryChatMemoryRepository)
-                .maxMessages(maxMessages)
-                .build();
-    }
+	@Bean
+	public MessageWindowChatMemory messageWindowChatMemory() {
+		int maxMessages = 100;
+		logger.info("Initializing InMemory MessageWindowChatMemory with max messages: {}", maxMessages);
+		InMemoryChatMemoryRepository inMemoryChatMemoryRepository = new InMemoryChatMemoryRepository();
+		return MessageWindowChatMemory.builder()
+			.chatMemoryRepository(inMemoryChatMemoryRepository)
+			.maxMessages(maxMessages)
+			.build();
+	}
+
 }

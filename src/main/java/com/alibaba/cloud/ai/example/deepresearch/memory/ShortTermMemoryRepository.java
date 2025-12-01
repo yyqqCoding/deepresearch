@@ -10,13 +10,13 @@ import java.util.List;
  */
 public interface ShortTermMemoryRepository {
 
-    /**
-     * 获取用户最近的提问记忆
-     * @param conversationId 会话Id
-     * @param limit 限制条数
-     * @return List<String>
-     */
-    List<Message> getRecentUserMessages(String conversationId, Integer limit);
+	/**
+	 * 获取用户最近的提问记忆
+	 * @param conversationId 会话Id
+	 * @param limit 限制条数
+	 * @return List<String>
+	 */
+	List<Message> getRecentUserMessages(String conversationId, Integer limit);
 
 	/**
 	 * 获取用户最近的提问记忆

@@ -53,6 +53,9 @@ public class ShortTermMemoryProperties {
 
 	public enum MemoryType {
 
+		/**
+		 * In-memory storage
+		 */
 		IN_MEMORY
 
 	}

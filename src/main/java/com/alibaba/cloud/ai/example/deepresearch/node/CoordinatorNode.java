@@ -53,12 +53,13 @@ public class CoordinatorNode implements NodeAction {
 
 	private final SessionContextService sessionContextService;
 
-    private final MessageWindowChatMemory messageWindowChatMemory;
+	private final MessageWindowChatMemory messageWindowChatMemory;
 
-	public CoordinatorNode(ChatClient coordinatorAgent, SessionContextService sessionContextService, MessageWindowChatMemory messageWindowChatMemory) {
+	public CoordinatorNode(ChatClient coordinatorAgent, SessionContextService sessionContextService,
+			MessageWindowChatMemory messageWindowChatMemory) {
 		this.coordinatorAgent = coordinatorAgent;
 		this.sessionContextService = sessionContextService;
-        this.messageWindowChatMemory = messageWindowChatMemory;
+		this.messageWindowChatMemory = messageWindowChatMemory;
 	}
 
 	@Override
@@ -72,15 +73,15 @@ public class CoordinatorNode implements NodeAction {
 
 		// 添加历史消息UserMessage和AssistantMessage交替
 		String sessionId = StateUtil.getSessionId(state);
-        List<Message> sessionHistoryMemory = messageWindowChatMemory.get(sessionId);
-        if (!CollectionUtils.isEmpty(sessionHistoryMemory)) {
-            messages.addAll(sessionHistoryMemory);
-        }
+		List<Message> sessionHistoryMemory = messageWindowChatMemory.get(sessionId);
+		if (!CollectionUtils.isEmpty(sessionHistoryMemory)) {
+			messages.addAll(sessionHistoryMemory);
+		}
 
 		// 1.2 添加用户提问
-        UserMessage userMessage = new UserMessage(StateUtil.getQuery(state));
-        messageWindowChatMemory.add(sessionId, userMessage);
-        messages.add(userMessage);
+		UserMessage userMessage = new UserMessage(StateUtil.getQuery(state));
+		messageWindowChatMemory.add(sessionId, userMessage);
+		messages.add(userMessage);
 		logger.debug("Current Coordinator messages: {}", messages);
 
 		// 发起调用并获取完整响应
@@ -102,9 +103,9 @@ public class CoordinatorNode implements NodeAction {
 		else {
 			logger.warn("❌ 未触发工具调用");
 			logger.debug("Coordinator response: {}", response.getResult());
-            AssistantMessage output = response.getResult().getOutput();
-            messageWindowChatMemory.add(sessionId, output);
-            updated.put("output", assistantMessage.getText());
+			AssistantMessage output = response.getResult().getOutput();
+			messageWindowChatMemory.add(sessionId, output);
+			updated.put("output", assistantMessage.getText());
 		}
 		updated.put("coordinator_next_node", nextStep);
 		updated.put("deep_research", deepResearch);

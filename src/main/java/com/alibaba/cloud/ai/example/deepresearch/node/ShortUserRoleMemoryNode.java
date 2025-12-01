@@ -213,7 +213,7 @@ public class ShortUserRoleMemoryNode implements NodeAction {
 		mergedResult.setUpdateTime(LocalDateTime.now(ZoneId.of(ZONE_ASIA_SHANGHAI)).format(DATE_TIME_FORMATTER));
 		SystemMessage mergedMemory = new SystemMessage(JsonUtil.toJson(mergedResult));
 		shortTermMemoryRepository.saveOrUpdate(USER_ID, StateUtil.getSessionId(state),
-                new ArrayList<>(Collections.singleton(mergedMemory)));
+				new ArrayList<>(Collections.singleton(mergedMemory)));
 		return mergedResult;
 	}
 
