@@ -18,6 +18,8 @@ import { ref, type Ref } from 'vue'
 import { useXAgent, useXChat } from 'ant-design-x-vue'
 import { chatService } from '@/services'
 import { useConfigStore } from '@/store/ConfigStore'
+import {useMessageStore} from "@/store/MessageStore";
+import {useConversationStore} from "@/store/ConversationStore";
 
 interface ChatOptions {
   convId: string
@@ -98,6 +100,9 @@ export function useChat(options: ChatOptions): ChatReturn {
    */
   const [agent] = useXAgent({
     request: async ({ message }, { onSuccess, onUpdate, onError }) => {
+        const messageStore =  useMessageStore()
+        const conversationStore =  useConversationStore()
+        messageStore.currentState.runFlag = true
       senderLoading.value = true
       let content = ''
 
@@ -105,7 +110,12 @@ export function useChat(options: ChatOptions): ChatReturn {
         switch (current.aiType) {
           case 'normal':
           case 'startDS': {
+              console.log(messageStore)
+              if(!conversationStore.contains(convId)) {
+                  await conversationStore.newOne(message)
+              }
             content = await sendChatStream(message, onUpdate, onError)
+
             break
           }
 
@@ -131,6 +141,7 @@ export function useChat(options: ChatOptions): ChatReturn {
       } catch (error) {
         onError(error instanceof Error ? error : new Error(String(error)))
       } finally {
+          messageStore.currentState.runFlag = false
         senderLoading.value = false
       }
     },

@@ -51,7 +51,9 @@ export class ScrollController {
       if (!this.scrollContainer.value) return
       nextTick(() => {
         this.scrollToPosition(this.scrollContainer.value.scrollHeight, (dis: number) => {
-          this.scrollContainer.value.scrollTop += dis
+            if(this.scrollContainer.value) {
+                this.scrollContainer.value.scrollTop += dis
+            }
         })
       })
     }, 1000)()

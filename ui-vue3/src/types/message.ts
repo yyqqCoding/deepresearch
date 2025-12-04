@@ -28,6 +28,7 @@ export interface MessageState<Message = any> {
   candidate: boolean
   // 是否展示研究细节
   deepResearchDetail: boolean
+  runFlag: boolean
   // 记录ai内容的类型
   aiType: 'normal' | 'startDS' | 'onDS' | 'endDS'
   // 极速模式 或者 深度模式
@@ -41,10 +42,9 @@ export interface MessageState<Message = any> {
  */
 export interface MsgType<Message> {
   convId: string
-  currentState: { [key: string]: MessageState<Message> }
-  // 记录历史
-  history: { [key: string]: MessageInfo<string>[] }
-  htmlReport: { [key: string]: string[] }
-  report: { [key: string]: any[] }
-  uploadedFiles: { [key: string]: UploadedFile[] },
+    history:  MessageInfo<any>[]
+  currentState: MessageState<Message>
+  htmlReport: string[]
+  report: { [key: string]:  any[] }
+  uploadedFiles: any[],
 }

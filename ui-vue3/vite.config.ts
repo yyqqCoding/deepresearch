@@ -35,6 +35,10 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      '/sse/llm': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
       // 添加聊天相关接口的代理配置
       '/chat': {
         target: 'http://localhost:8080',

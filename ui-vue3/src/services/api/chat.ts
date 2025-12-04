@@ -57,7 +57,7 @@ class ChatService {
     onUpdate: (content: any) => void,
     onError: (error: any) => void
   ): Promise<string> {
-    const xStreamBody = new XStreamBody('/chat/stream', {
+    const xStreamBody = new XStreamBody('/sse/llm', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -148,7 +148,7 @@ import {
   Menu,
   MenuItem,
   type MenuProps,
-  message,
+  message as AntMessage,
   Modal,
   theme,
 } from 'ant-design-vue'
@@ -182,7 +182,8 @@ import { useAuthStore } from '@/store/AuthStore'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useMessageStore } from '@/store/MessageStore'
-
+import {findConvInfo, removeConvInfo} from "@/db/conversationDB";
+import { message } from 'ant-design-vue';
 const router = useRouter()
 const route = useRoute()
 const username = useAuthStore().token
@@ -283,9 +284,7 @@ const menuConfig: ConversationsProps['menu'] = conversation => ({
       case 'delete':
         conversationStore.delete(conversation.key)
         if (route.params.convId === conversation.key) {
-          const messageStore = useMessageStore()
-          delete messageStore.history[conversation.key]
-          delete messageStore.currentState[conversation.key]
+          removeConvInfo(route.params.convId)
           router.push('/chat')
         }
         break
@@ -297,8 +296,9 @@ const menuConfig: ConversationsProps['menu'] = conversation => ({
 })
 
 function createNewConversation() {
-  const { key } = conversationStore.newOne('Unnamed conversation')
-  changeConv(key)
+  conversationStore.newOne('Unnamed conversation').then(res=>{
+    changeConv(res.key)
+  })
 }
 
 function switchMode(mode: string) {
@@ -365,7 +365,12 @@ onMounted(() => {
 })
 
 function changeConv(id: any) {
-  router.push(`/chat/${id}`)
+  const messageStore = useMessageStore()
+  if (messageStore.current?.runFlag) {
+    AntMessage.warn("对话正在进行，无法切换")
+  }else {
+    router.push(`/chat/${id}`)
+  }
 }
 
 function openConfigView() {

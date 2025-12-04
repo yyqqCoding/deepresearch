@@ -149,8 +149,9 @@ const messageStore = useMessageStore()
 // TODO 是否有更好的方式，发送消息之后才启动一个新的会话
 let convId = route.params.convId as string
 if (!convId) {
-  const { key } = conversationStore.newOne()
-  router.push(`/chat/${key}`)
+  conversationStore.newOne().then(res=>{
+    router.push(`/chat/${res.key}`)
+  })
 }
 
 const { useToken } = theme
@@ -327,13 +328,7 @@ const parseMessageRef = (status: MessageStatus, msg: string): any => {
   }
 }
 
-// 初始化消息
-if (convId) {
-  const his_messages = messageStore.history[convId]
-  if (his_messages) {
-    messages.value = his_messages as any
-  }
-}
+
 
 // 消息列表
 const bubbleList = computed(() => {
@@ -347,7 +342,7 @@ const bubbleList = computed(() => {
   if(isError) {
     return []
   }
-  messageStore.history[convId] = messages.value
+  messageStore.history = messages.value
   return messages.value.map(({id, status, message}, idx) => {
       return {
         key: idx,
@@ -359,7 +354,7 @@ const bubbleList = computed(() => {
 })
 
 const headerNode = computed(() => {
-  const filesList = messageStore.uploadedFiles?.[convId] || []
+  const filesList = messageStore.uploadedFiles || []
   return (
     <Sender.Header title="上传文件" open={headerOpen.value} onOpenChange={v => headerOpen.value = v}>
       <Attachments items={filesList} overflow="scrollX" onChange={handleFileChange} beforeUpload={beforeUpload} customRequest={handleFileUpload} placeholder={(type) => type === 'drop'
@@ -378,8 +373,17 @@ const headerNode = computed(() => {
 const scrollContainer = ref<Element | any>(null)
 const sc = new ScrollController()
 
-onMounted(() => {
+onMounted(async () => {
+  // 初始化消息
+  if (convId) {
+    await messageStore.init(convId)
+    const his_messages = messageStore.history
+    if (his_messages) {
+      messages.value = his_messages as any
+    }
+  }
   sc.init(scrollContainer)
+
 })
 
 watch(

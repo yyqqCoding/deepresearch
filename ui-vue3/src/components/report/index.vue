@@ -2,70 +2,70 @@
   <transition name="fade" mode="out-in">
     <Flex class="aux" v-if="visible" style="width: 60%" vertical>
       <a-card style="height: 100%">
-          <template #title>
-            <Flex justify="space-between" align="center">
+        <template #title>
+          <Flex justify="space-between" align="center">
               <span style="font-weight: 500;">
                 {{ endFlag ? '报告' : '思考过程' }}
               </span>
-              <Flex gap="small" align="center" v-if="endFlag">
-                <Button type="text" size="small" @click="handleOnlineReport">
-                  <GlobalOutlined />
-                  在线报告
-                </Button>
-                <Button type="text" size="small" @click="handleDownloadReport">
-                  <DownloadOutlined />
-                  下载报告
-                </Button>
-                <Button type="text" size="small" @click="handleClose">
-                  <CloseOutlined />
-                </Button>
-              </Flex>
+            <Flex gap="small" align="center" v-if="endFlag">
+              <Button type="text" size="small" @click="handleOnlineReport">
+                <GlobalOutlined/>
+                在线报告
+              </Button>
+              <Button type="text" size="small" @click="handleDownloadReport">
+                <DownloadOutlined/>
+                下载报告
+              </Button>
+              <Button type="text" size="small" @click="handleClose">
+                <CloseOutlined/>
+              </Button>
             </Flex>
-          </template>
+          </Flex>
+        </template>
         <!-- 思考过程 -->
         <div class="message-list" v-if="items && items.length > 0 && !endFlag">
           <ThoughtChain
-            :items="items"
-            collapsible
+              :items="items"
+              collapsible
           />
         </div>
         <!-- END 节点返回之后显示的内容 -->
         <div v-else-if="endFlag" class="end-content">
-            <MD :content="endContent" />
-            <!-- 思考过程 -->
-            <a-collapse :bordered="false" class="thought-collapse">
-              <a-collapse-panel header="参考来源" key="1" class="thought-panel">
-                <ReferenceSources :sources="sources" />
-              </a-collapse-panel>
-              <a-collapse-panel header="思路" key="2" class="thought-panel">
-                <ThoughtChain
+          <MD :content="endContent"/>
+          <!-- 思考过程 -->
+          <a-collapse :bordered="false" class="thought-collapse">
+            <a-collapse-panel header="参考来源" key="1" class="thought-panel">
+              <ReferenceSources :sources="sources"/>
+            </a-collapse-panel>
+            <a-collapse-panel header="思路" key="2" class="thought-panel">
+              <ThoughtChain
                   :items="items"
                   collapsible
-                />
-              </a-collapse-panel>
-            </a-collapse>
+              />
+            </a-collapse-panel>
+          </a-collapse>
         </div>
-        
+
         <!-- 无消息记录时的提示 -->
         <div v-else class="no-messages">
           暂无消息记录
         </div>
       </a-card>
-      
+
       <!-- HTML 渲染组件弹窗 -->
       <a-modal
-        v-model:open="htmlModalVisible"
-        title="HTML 报告"
-        :width="1200"
-        :footer="null"
-        :destroyOnClose="true"
-        @cancel="closeHtmlModal"
+          v-model:open="htmlModalVisible"
+          title="HTML 报告"
+          :width="1200"
+          :footer="null"
+          :destroyOnClose="true"
+          @cancel="closeHtmlModal"
       >
         <HtmlRenderer
-          ref="htmlRendererRef"
-          :htmlChunks="htmlChunks"
-          :loading="htmlLoading"
-          style="height: 600px;"
+            ref="htmlRendererRef"
+            :htmlChunks="htmlChunks"
+            :loading="htmlLoading"
+            style="height: 600px;"
         />
       </a-modal>
     </Flex>
@@ -73,18 +73,26 @@
 </template>
 
 <script setup lang="ts">
-import { Flex, Button, Modal } from 'ant-design-vue'
-import { CloseOutlined, LoadingOutlined, CheckCircleOutlined, GlobalOutlined, DownloadOutlined } from '@ant-design/icons-vue'
-import { parseJsonTextStrict } from '@/utils/jsonParser';
-import { useMessageStore } from '@/store/MessageStore'
-import { computed, h, watch, onUnmounted, onMounted, ref } from 'vue'
-import { ThoughtChain, type ThoughtChainProps, type ThoughtChainItem } from 'ant-design-x-vue';
+import {Flex, Button, Modal} from 'ant-design-vue'
+import {
+  CloseOutlined,
+  LoadingOutlined,
+  CheckCircleOutlined,
+  GlobalOutlined,
+  DownloadOutlined
+} from '@ant-design/icons-vue'
+import {parseJsonTextStrict} from '@/utils/jsonParser';
+import {useMessageStore} from '@/store/MessageStore'
+import {computed, h, watch, onUnmounted, onMounted, ref} from 'vue'
+import {ThoughtChain, type ThoughtChainProps, type ThoughtChainItem} from 'ant-design-x-vue';
 import MD from '@/components/md/index.vue'
 import HtmlRenderer from '@/components/html/index.vue'
 import ReferenceSources from '@/components/reference-sources/index.vue'
-import { XStreamBody } from '@/utils/stream'
-import { reportService } from '@/services'
-import type { NormalNode } from '@/types/node';
+import {XStreamBody} from '@/utils/stream'
+import {reportService} from '@/services'
+import type {NormalNode} from '@/types/node';
+import {addConvInfo} from "@/db/conversationDB";
+import {deepToRaw} from "@/utils/proxy";
 
 const messageStore = useMessageStore()
 
@@ -96,6 +104,7 @@ interface Props {
 
 interface Emits {
   (e: 'close'): void
+
   (e: 'onlineReport'): void
 }
 
@@ -120,46 +129,46 @@ const arrayTemp: ThoughtChainProps['items'] = []
 const llmStreamCache = new Map<string, { item: ThoughtChainItem, content: string }>()
 // 从messageStore 拿出消息，然后进行解析并且渲染
 const items = computed(() => {
-    // 思维链显示的列表
-    const array: ThoughtChainProps['items'] = []
-    if(!props.threadId || !messageStore.report[props.threadId]){
-      return array
-    }
-    // TODO 性能问题？
-    const messages = messageStore.report[props.threadId]
-    arrayTemp.length = 0
-    llmStreamCache.clear()
-    endFlag.value = false
-    endContent.value = ''
-    sources.value = []
-    // 遍历messages 用于渲染思维链
-    messages.forEach(node => {
-      if(node.nodeName) {
-        processJsonNodeLogic(node)
-      }else{
-        processLlmStreamNodeLogic(node)
-      }
-    })
-
-    array.push(...arrayTemp)
+  // 思维链显示的列表
+  const array: ThoughtChainProps['items'] = []
+  if (!props.threadId || !messageStore.report[props.threadId]) {
     return array
+  }
+  // TODO 性能问题？
+  const messages = messageStore.report[props.threadId]
+  arrayTemp.length = 0
+  llmStreamCache.clear()
+  endFlag.value = false
+  endContent.value = ''
+  sources.value = []
+  // 遍历messages 用于渲染思维链
+  messages.forEach(node => {
+    if (node.nodeName) {
+      processJsonNodeLogic(node)
+    } else {
+      processLlmStreamNodeLogic(node)
+    }
+  })
+
+  array.push(...arrayTemp)
+  return array
 })
 
 // 处理json节点
 const processJsonNodeLogic = (node: NormalNode) => {
-    // 渲染普通节点
-    processJsonNode(node)
-    // 普通节点处理完后，添加pending节点
-    appendPendingNode()
-    // information 或者 end 节点 说明等待用户反馈 或者 结束
-    if(node.nodeName === 'planner' || node.nodeName === '__END__'){
-      removeLastPendingNode()
-    }
+  // 渲染普通节点
+  processJsonNode(node)
+  // 普通节点处理完后，添加pending节点
+  appendPendingNode()
+  // information 或者 end 节点 说明等待用户反馈 或者 结束
+  if (node.nodeName === 'planner' || node.nodeName === '__END__') {
+    removeLastPendingNode()
+  }
 }
 
 // 处理llm_stream节点
 const processLlmStreamNodeLogic = (node: any) => {
-  if(!node.visible) {
+  if (!node.visible) {
     return
   }
   let item: ThoughtChainItem | undefined
@@ -173,10 +182,10 @@ const processLlmStreamNodeLogic = (node: any) => {
     const k = node.graphId.thread_id + '-' + key
     item = processLlmStreamNode(node, key, k)
   }
-  if(item) {
+  if (item) {
     // 检查是否已经存在相同的item（针对llm_stream节点）
     const existingIndex = arrayTemp.findIndex(existingItem => existingItem === item)
-    if(existingIndex === -1) {
+    if (existingIndex === -1) {
       arrayTemp.push(item)
     }
   }
@@ -196,12 +205,12 @@ const appendPendingNode = () => {
 
   // 如果不存在pending节点，创建一个新的
   const pendingItem: ThoughtChainItem = {
-      title: '思考中',
-      description: '正在等待思考结果',
-      icon: h(LoadingOutlined),
-      status: 'pending'
-    }
-    arrayTemp.push(pendingItem)
+    title: '思考中',
+    description: '正在等待思考结果',
+    icon: h(LoadingOutlined),
+    status: 'pending'
+  }
+  arrayTemp.push(pendingItem)
 }
 
 const processLlmStreamNode = (node: any, key: string, cacheKey: string): ThoughtChainItem => {
@@ -211,9 +220,9 @@ const processLlmStreamNode = (node: any, key: string, cacheKey: string): Thought
     // 累积新的内容
     cached.content += node[key]
     // 更新MD组件的内容
-    cached.item.content = h(MD, { content: cached.content })
+    cached.item.content = h(MD, {content: cached.content})
     // 结束组件
-    if(node.finishReason === 'STOP') {
+    if (node.finishReason === 'STOP') {
       cached.item.status = 'success'
       cached.item.icon = h(CheckCircleOutlined)
       cached.item.description = '内容生成完成'
@@ -222,14 +231,14 @@ const processLlmStreamNode = (node: any, key: string, cacheKey: string): Thought
     return cached.item
   } else {
     // 创建新的ThoughtChainItem
-    const initialContent =  node[key]
+    const initialContent = node[key]
     const item: ThoughtChainItem = {
       key: key,
       title: node.step_title ? node.step_title : key,
       description: '正在生成内容',
       icon: h(LoadingOutlined),
       status: 'pending',
-      content: h(MD, { content: initialContent })
+      content: h(MD, {content: initialContent})
     }
 
     // 缓存该节点
@@ -243,91 +252,93 @@ const processLlmStreamNode = (node: any, key: string, cacheKey: string): Thought
 }
 //  渲染普通节点
 const processJsonNode = (node: any) => {
-    let title = ''
-    let description = ''
-    let content = null
+  let title = ''
+  let description = ''
+  let content = null
 
-    // 根据不同节点类型处理
-    switch(node.nodeName) {
-      case '__START__':
-        title = node.displayTitle
-        description = node.content.query
-        break
-      case 'coordinator':
-        title = node.displayTitle
-        description = '当前是否启动研究模式:' + node.content
-        break
+  // 根据不同节点类型处理
+  switch (node.nodeName) {
+    case '__START__':
+      title = node.displayTitle
+      description = node.content.query
+      break
+    case 'coordinator':
+      title = node.displayTitle
+      description = '当前是否启动研究模式:' + node.content
+      break
 
-      case 'rewrite_multi_query':
-        title = node.displayTitle
-        description = '优化查询以获得更好的搜索结果'
-        if(node.content?.optimize_queries && Array.isArray(node.content.optimize_queries)) {
-          const queries = node.content.optimize_queries
-          const markdownContent = queries.map((query: any, index: number) => `${index + 1}. ${query}`).join('\n')
-          content = h(MD, { content: markdownContent })
-        }
-        break
+    case 'rewrite_multi_query':
+      title = node.displayTitle
+      description = '优化查询以获得更好的搜索结果'
+      if (node.content?.optimize_queries && Array.isArray(node.content.optimize_queries)) {
+        const queries = node.content.optimize_queries
+        const markdownContent = queries.map((query: any, index: number) => `${index + 1}. ${query}`).join('\n')
+        content = h(MD, {content: markdownContent})
+      }
+      break
 
-      case 'background_investigator':
-        title = node.displayTitle
-        description = '正在收集和分析背景信息'
-        if(node.siteInformation && Array.isArray(node.siteInformation)) {
-          content = h(ReferenceSources, { sources: node.siteInformation[0] })
-          sources.value = node.siteInformation
-        }
-        break
+    case 'background_investigator':
+      title = node.displayTitle
+      description = '正在收集和分析背景信息'
+      if (node.siteInformation && Array.isArray(node.siteInformation)) {
+        content = h(ReferenceSources, {sources: node.siteInformation[0]})
+        sources.value = node.siteInformation
+      }
+      break
 
-      case 'planner':
-        title = node.displayTitle
-        const json = JSON.parse(node.content)
-        description = json.title
-        const stepsContent= json.steps.map((step: any, index: number) => {
-          const { title, description} = step
-          return `### ${index + 1}. ${title}\n\n${description}\n\n---\n`
-        }).join('\n')
-        content = h(MD, { content: stepsContent })
-        break
+    case 'planner':
+      title = node.displayTitle
+      const json = JSON.parse(node.content)
+      description = json.title
+      const stepsContent = json.steps.map((step: any, index: number) => {
+        const {title, description} = step
+        return `### ${index + 1}. ${title}\n\n${description}\n\n---\n`
+      }).join('\n')
+      content = h(MD, {content: stepsContent})
+      break
 
-      case 'human_feedback':
-        title = node.displayTitle
-        description = '开始研究'
-        break
+    case 'human_feedback':
+      title = node.displayTitle
+      description = '开始研究'
+      break
 
 
-      case 'reporter':
-        title = node.displayTitle
-        description = '生成最终研究报告'
-        if(node.content) {
-          content = h(MD, { content: node.content })
-          endContent.value = node.content
-        }
-        break
+    case 'reporter':
+      title = node.displayTitle
+      description = '生成最终研究报告'
+      if (node.content) {
+        content = h(MD, {content: node.content})
+        endContent.value = node.content
+      }
+      break
 
-      case '__END__':
-        title = node.displayTitle
-        description = '研究完成'
-        endFlag.value = true
-        if(node.content){
-          content = h(MD, { content: node.content.final_report })
-          endContent.value = node.content.final_report
-        }
-        break
+    case '__END__':
+      title = node.displayTitle
+      description = '研究完成'
+      endFlag.value = true
+      if (node.content) {
+        content = h(MD, {content: node.content.final_report})
+        endContent.value = node.content.final_report
+      }
+      messageStore.currentState.runFlag = false
+      addConvInfo(props.convId, deepToRaw(messageStore))
+      break
 
-      default:
-        // console.log('default', node)
-        return
-    }
-    const item: ThoughtChainItem = {
-        title,
-        description,
-        icon: h(CheckCircleOutlined),
-        status: 'success',
-    }
+    default:
+      // console.log('default', node)
+      return
+  }
+  const item: ThoughtChainItem = {
+    title,
+    description,
+    icon: h(CheckCircleOutlined),
+    status: 'success',
+  }
 
-    if(content) {
-      item.content = content
-    }
-    arrayTemp.push(item)
+  if (content) {
+    item.content = content
+  }
+  arrayTemp.push(item)
 }
 onMounted(() => {
   llmStreamCache.clear()
@@ -357,35 +368,36 @@ const handleOnlineReport = async () => {
   htmlModalVisible.value = true
   htmlLoading.value = true
   htmlChunks.value = []
-  
-  if(messageStore.htmlReport[props.convId]){
-    htmlChunks.value = messageStore.htmlReport[props.convId]
+
+  if (messageStore.htmlReport) {
+    htmlChunks.value = messageStore.htmlReport
     htmlLoading.value = false
     return
   }
 
   try {
-      const xStreamBody = new XStreamBody('/api/reports/build-html?threadId=' + props.threadId, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'text/event-stream',
-          }})
+    const xStreamBody = new XStreamBody('/api/reports/build-html?threadId=' + props.threadId, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+      }
+    })
 
-      await xStreamBody.readStream((chunk: any) => {
-          // 将接收到的HTML片段添加到数组中
-          const chunkNode = JSON.parse(chunk)
-          htmlChunks.value.push(chunkNode.result.output.text)
-      })
+    await xStreamBody.readStream((chunk: any) => {
+      // 将接收到的HTML片段添加到数组中
+      const chunkNode = JSON.parse(chunk)
+      htmlChunks.value.push(chunkNode.result.output.text)
+    })
 
-      htmlLoading.value = false
-      // 缓存html报告
-      messageStore.htmlReport[props.convId] = htmlChunks.value
+    htmlLoading.value = false
+    // 缓存html报告
+    messageStore.htmlReport = htmlChunks.value
   } catch (e: any) {
-      console.error('加载HTML报告失败:', e)
-      htmlLoading.value = false
-      // 如果出错，可以显示错误信息
-      htmlChunks.value = [`<div style="color: red; padding: 20px;">加载HTML报告时出错: ${e.statusText || '未知错误'}</div>`]
+    console.error('加载HTML报告失败:', e)
+    htmlLoading.value = false
+    // 如果出错，可以显示错误信息
+    htmlChunks.value = [`<div style="color: red; padding: 20px;">加载HTML报告时出错: ${e.statusText || '未知错误'}</div>`]
   }
 }
 
@@ -438,12 +450,12 @@ const handleDownloadReport = async () => {
   overflow-y: auto;
   padding: 16px;
   line-height: 1.6;
-  
+
   :deep(img) {
     max-width: 100%;
     height: auto;
   }
-  
+
   :deep(pre) {
     overflow-x: auto;
     white-space: pre-wrap;
@@ -455,7 +467,7 @@ const handleDownloadReport = async () => {
 .thought-collapse {
   margin-top: 24px;
   background: transparent;
-  
+
   :deep(.ant-collapse-item) {
     border: none;
     background: linear-gradient(135deg, #f6f8ff 0%, #f0f4ff 100%);
@@ -464,13 +476,13 @@ const handleDownloadReport = async () => {
     margin-bottom: 8px;
     overflow: hidden;
     transition: all 0.3s ease;
-    
+
     &:hover {
       box-shadow: 0 4px 16px rgba(24, 144, 255, 0.12);
       transform: translateY(-1px);
     }
   }
-  
+
   :deep(.ant-collapse-header) {
     padding: 16px 20px;
     background: transparent;
@@ -479,27 +491,27 @@ const handleDownloadReport = async () => {
     font-size: 15px;
     color: #1890ff;
     transition: all 0.3s ease;
-    
+
     &:hover {
       color: #40a9ff;
     }
-    
+
     .ant-collapse-arrow {
       color: #1890ff;
       font-size: 14px;
       transition: all 0.3s ease;
     }
   }
-  
+
   :deep(.ant-collapse-content) {
     border: none;
     background: transparent;
-    
+
     .ant-collapse-content-box {
       padding: 0 20px 20px 20px;
     }
   }
-  
+
   :deep(.ant-collapse-item-active) {
     .ant-collapse-header {
       border-bottom: 1px solid rgba(24, 144, 255, 0.1);

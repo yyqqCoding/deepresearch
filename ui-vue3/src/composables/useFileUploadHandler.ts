@@ -37,7 +37,7 @@ export function useFileUploadHandler(options: FileUploadHandlerOptions) {
     console.log('handleFileChange', file)
 
     if (file.status === 'removed') {
-      messageStore.removeUploadedFile(convId, file.uid)
+      messageStore.removeUploadedFile(file.uid)
       messageApi.success('文件已删除')
       return
     }
@@ -51,7 +51,7 @@ export function useFileUploadHandler(options: FileUploadHandlerOptions) {
         uploadTime: new Date().toISOString(),
         status: 'success' as const
       }
-      messageStore.addUploadedFile(convId, uploadedFile)
+      messageStore.addUploadedFile( uploadedFile)
       messageApi.success(`${file.name} 上传成功`)
     }
   }

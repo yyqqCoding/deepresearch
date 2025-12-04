@@ -21,53 +21,47 @@ import { reactive } from 'vue'
 import { type MessageState, type MsgType } from '@/types/message'
 import { parseJsonTextStrict } from '@/utils/jsonParser'
 import type { UploadedFile } from '@/types/upload'
+import {findConvInfo} from "@/db/conversationDB";
 export const useMessageStore = <Message extends SimpleType>() =>
   defineStore('messageStore', {
     state(): MsgType<Message> {
       return reactive({
         convId: '',
-        currentState: {} as { [key: string]: MessageState<Message> },
-        // { 会话id: [{ 线程id: 消息列表 }] }
-        history: {} as { [key: string]: MessageInfo<any>[] },
-        htmlReport: {} as { [key: string]: string[] },
-        report: {} as { [key: string]: any[] },
-        // { 会话id: 文件列表 }
-        uploadedFiles: {} as { [key: string]: UploadedFile[] },
+        currentState: {} as  MessageState<Message> ,
+        history: [] as  MessageInfo<any>[] ,
+        htmlReport: [] as  string[] ,
+        report: {} as { [key: string]:  any[] },
+        uploadedFiles: [] as UploadedFile[],
       })
     },
     getters: {
       // 获取消息列表
       messages: (state): MessageInfo<string>[]  => {
-        const res: MessageInfo<string>[] = []
-        if (state.convId) {
-          const messages = state.history[state.convId]
-          const threadId = state.currentState[state.convId].threadId
-          if(!messages) {
-            return []
-          }
-          for(const msg of messages) {
-            if(!msg.message) {
-              continue
-            }
-            const jsonArray = parseJsonTextStrict(msg.message)
-            jsonArray.forEach(item => {
-              if(item.graphId.thread_id === threadId) {
-                res.push(msg)
-              }
-            })
-          }
-        }
-        return res
+        return state.history||[]
       },
       // 获取当下消息状态
       current: (state): MessageState<Message> => {
-        if (state.convId) {
-          return state.currentState[state.convId]
-        }
-        return {} as MessageState<Message>
+          return state.currentState || {} as MessageState<Message>
       }
     },
     actions: {
+        async init(convId: string) {
+            this.convId = convId
+            const {conv_messages} = await findConvInfo(convId)
+            if (conv_messages) {
+                this.currentState = conv_messages.currentState
+                this.history = conv_messages.history
+                this.htmlReport = conv_messages.htmlReport
+                this.report = conv_messages.report
+                this.uploadedFiles = conv_messages.uploadedFiles
+            } else {
+                this.currentState = {} as MessageState<Message>
+                this.history = [] as MessageInfo<any>[]
+                this.htmlReport = [] as string[]
+                this.report = {} as { [key: string]: any[] }
+                this.uploadedFiles = [] as UploadedFile[]
+            }
+        },
       nextAIType() {
         if (!this.current.aiType || this.current.aiType === 'normal') {
           this.current.aiType = 'startDS'
@@ -86,8 +80,9 @@ export const useMessageStore = <Message extends SimpleType>() =>
         const node = JSON.parse(report)
         if(!this.report[node.graphId.thread_id]) {
           this.report[node.graphId.thread_id] = []
+        }else {
+            this.report[node.graphId.thread_id].push(node)
         }
-        this.report[node.graphId.thread_id].push(node) 
       },
       isEnd(threadId: string): boolean {
         const report = this.report[threadId]
@@ -102,27 +97,23 @@ export const useMessageStore = <Message extends SimpleType>() =>
         return false
       },
       // 添加文件到指定会话
-      addUploadedFile(convId: string, file: UploadedFile) {
-        if (!this.uploadedFiles[convId]) {
-          this.uploadedFiles[convId] = []
+      addUploadedFile(file: UploadedFile) {
+        if (!this.uploadedFiles) {
+          this.uploadedFiles = []
         }
-        this.uploadedFiles[convId].push(file)
+        this.uploadedFiles.push(file)
       },
       // 移除指定会话的文件
-      removeUploadedFile(convId: string, fileId: string) {
-        if (this.uploadedFiles[convId]) {
-          this.uploadedFiles[convId] = this.uploadedFiles[convId].filter((file: UploadedFile) => file.uid !== fileId)
-        }
+      removeUploadedFile(fileId: string) {
+          this.uploadedFiles = this.uploadedFiles.filter((file: UploadedFile) => file.uid !== fileId)
       },
       // 更新文件状态
-      updateFileStatus(convId: string, fileId: string, status: UploadedFile['status']) {
-        if (this.uploadedFiles[convId]) {
-          const file = this.uploadedFiles[convId].find((f: UploadedFile) => f.uid === fileId)
+      updateFileStatus(fileId: string, status: UploadedFile['status']) {
+          const file = this.uploadedFiles.find((f: UploadedFile) => f.uid === fileId)
           if (file) {
-            file.status = status
+              file.status = status
           }
-        }
       }
     },
-    persist: true,
+    // persist: true,
   })()
