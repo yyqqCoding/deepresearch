@@ -59,7 +59,7 @@ class ReportService {
    */
   async exportPDF(threadId: string): Promise<Blob> {
     const response = await service.get(`/api/reports/${threadId}/export/pdf`, {
-      responseType: 'blob'
+      responseType: 'blob',
     })
     return response.data
   }

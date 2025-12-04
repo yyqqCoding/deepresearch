@@ -17,7 +17,13 @@
 <template>
   <div class="__container_chat_index">
     <Flex class="body" gap="middle">
-      <Flex class="chat" vertical gap="middle" :style="{ width: current.deepResearchDetail ? '40%' : '100%' }" align="center">
+      <Flex
+        class="chat"
+        vertical
+        gap="middle"
+        :style="{ width: current.deepResearchDetail ? '40%' : '100%' }"
+        align="center"
+      >
         <div
           ref="scrollContainer"
           align="center"
@@ -52,8 +58,13 @@
             >
               <Flex justify="space-between" align="center">
                 <Flex align="center">
-                  <a-button size="small" style="border-radius: 15px" type="text" @click="headerOpen = !headerOpen">
-                      <LinkOutlined />
+                  <a-button
+                    size="small"
+                    style="border-radius: 15px"
+                    type="text"
+                    @click="headerOpen = !headerOpen"
+                  >
+                    <LinkOutlined />
                   </a-button>
 
                   <a-switch
@@ -90,7 +101,12 @@
           </sender>
         </div>
       </Flex>
-      <Report :visible="current.deepResearchDetail" :threadId="current.threadId" :convId="convId" @close="current.deepResearchDetail = false" />
+      <Report
+        :visible="current.deepResearchDetail"
+        :threadId="current.threadId"
+        :convId="convId"
+        @close="current.deepResearchDetail = false"
+      />
     </Flex>
   </div>
 </template>
@@ -131,9 +147,9 @@ import { useMessageStore } from '@/store/MessageStore'
 import { useConversationStore } from '@/store/ConversationStore'
 import { useRoute, useRouter } from 'vue-router'
 import { useConfigStore } from '@/store/ConfigStore'
-import { parseJsonTextStrict } from '@/utils/jsonParser';
-import type { NormalNode, SiteInformation } from '@/types/node';
-import type { MessageState } from '@/types/message';
+import { parseJsonTextStrict } from '@/utils/jsonParser'
+import type { NormalNode, SiteInformation } from '@/types/node'
+import type { MessageState } from '@/types/message'
 import { chatService } from '@/services'
 import { useThoughtChainBuilder } from '@/composables/useThoughtChainBuilder'
 import { useMessageParser } from '@/composables/useMessageParser'
@@ -149,7 +165,7 @@ const messageStore = useMessageStore()
 // TODO 是否有更好的方式，发送消息之后才启动一个新的会话
 let convId = route.params.convId as string
 if (!convId) {
-  conversationStore.newOne().then(res=>{
+  conversationStore.newOne().then(res => {
     router.push(`/chat/${res.key}`)
   })
 }
@@ -163,10 +179,10 @@ const roles: BubbleListProps['roles'] = {
   ai: {
     placement: 'start',
     avatar: {
-        icon: <GlobalOutlined />,
-        shape: 'square',
-        style: { background: 'linear-gradient(to right, #f67ac4, #6b4dee)' },
-      },
+      icon: <GlobalOutlined />,
+      shape: 'square',
+      style: { background: 'linear-gradient(to right, #f67ac4, #6b4dee)' },
+    },
     style: {
       maxWidth: '100%',
     },
@@ -176,11 +192,11 @@ const roles: BubbleListProps['roles'] = {
     placement: 'end',
     shape: 'corner',
     avatar: {
-        icon: <UserOutlined />,
-        style: {},
-      },
+      icon: <UserOutlined />,
+      style: {},
+    },
     rootClassName: 'local',
-  }
+  },
 }
 
 // 设置当前会话信息
@@ -198,7 +214,7 @@ const thoughtChainBuilder = useThoughtChainBuilder({
   messageStore,
   current,
   onDeepResearch: startDeepResearch,
-  onOpenDeepResearch: openDeepResearch
+  onOpenDeepResearch: openDeepResearch,
 })
 
 const {
@@ -207,42 +223,32 @@ const {
   buildPendingNodeThoughtChain,
   buildStartDSThoughtChain,
   buildOnDSThoughtChain,
-  buildEndDSThoughtChain
+  buildEndDSThoughtChain,
 } = thoughtChainBuilder
 
 // 使用消息解析器 composable
 const messageParser = useMessageParser({
   messageStore,
-  current
+  current,
 })
 
-const {
-  parseLoadingMessage,
-  parseSuccessMessage,
-  parseMessage,
-  parseFooter,
-  findNode
-} = messageParser
+const { parseLoadingMessage, parseSuccessMessage, parseMessage, parseFooter, findNode } =
+  messageParser
 
 // 使用Chat composable
 const { senderLoading, onRequest, messages } = useChat({
   convId,
   current,
-  messageStore
+  messageStore,
 })
 
 // 使用文件上传处理器 composable
 const fileUploadHandler = useFileUploadHandler({
   convId,
-  messageStore
+  messageStore,
 })
 
-const {
-  headerOpen,
-  handleFileChange,
-  beforeUpload,
-  handleFileUpload
-} = fileUploadHandler
+const { headerOpen, handleFileChange, beforeUpload, handleFileUpload } = fileUploadHandler
 
 // 定义发送消息的内容
 const content = ref('')
@@ -252,7 +258,7 @@ const submitHandle = (nextContent: any) => {
   messageStore.nextAIType()
 
   // 自动接受，需要再转为下一个状态
-  if(configStore.chatConfig.auto_accepted_plan){
+  if (configStore.chatConfig.auto_accepted_plan) {
     messageStore.nextAIType()
   }
   onRequest(nextContent)
@@ -328,44 +334,55 @@ const parseMessageRef = (status: MessageStatus, msg: string): any => {
   }
 }
 
-
-
 // 消息列表
 const bubbleList = computed(() => {
   let isError = false
-  for(const item of messages.value) {
-    if(item.status === 'error') {
+  for (const item of messages.value) {
+    if (item.status === 'error') {
       isError = true
     }
   }
   // 避免异常，导致整个消息列表被覆盖
-  if(isError) {
+  if (isError) {
     return []
   }
   messageStore.history = messages.value
-  return messages.value.map(({id, status, message}, idx) => {
-      return {
-        key: idx,
-        role: status === 'local' ? 'local' : 'ai',
-        content: parseMessageRef(status, message),
-        footer: parseFooter(status),
-      }
+  return messages.value.map(({ id, status, message }, idx) => {
+    return {
+      key: idx,
+      role: status === 'local' ? 'local' : 'ai',
+      content: parseMessageRef(status, message),
+      footer: parseFooter(status),
+    }
   })
 })
 
 const headerNode = computed(() => {
   const filesList = messageStore.uploadedFiles || []
   return (
-    <Sender.Header title="上传文件" open={headerOpen.value} onOpenChange={v => headerOpen.value = v}>
-      <Attachments items={filesList} overflow="scrollX" onChange={handleFileChange} beforeUpload={beforeUpload} customRequest={handleFileUpload} placeholder={(type) => type === 'drop'
-              ? {
+    <Sender.Header
+      title="上传文件"
+      open={headerOpen.value}
+      onOpenChange={v => (headerOpen.value = v)}
+    >
+      <Attachments
+        items={filesList}
+        overflow="scrollX"
+        onChange={handleFileChange}
+        beforeUpload={beforeUpload}
+        customRequest={handleFileUpload}
+        placeholder={type =>
+          type === 'drop'
+            ? {
                 title: '点击或拖拽文件到这里上传',
               }
-              : {
+            : {
                 icon: <CloudUploadOutlined />,
                 title: '点击上传文件',
                 description: '支持上传PDF、TXT、DOC、DOCX、MD等文件',
-              }}/>
+              }
+        }
+      />
     </Sender.Header>
   )
 })
@@ -383,7 +400,6 @@ onMounted(async () => {
     }
   }
   sc.init(scrollContainer)
-
 })
 
 watch(
@@ -413,7 +429,10 @@ watch(
     height: 100%;
     box-sizing: border-box;
     position: relative;
-    transition: width 0.3s ease, margin 0.3s ease, padding 0.3s ease;
+    transition:
+      width 0.3s ease,
+      margin 0.3s ease,
+      padding 0.3s ease;
 
     .bubble-list {
       width: 100%;

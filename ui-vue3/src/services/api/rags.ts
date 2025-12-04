@@ -40,7 +40,7 @@ class RagService {
     formData.append('session_id', data.session_id)
 
     return service.post('/api/rag/user/batch-upload', formData, {
-      timeout: 30000
+      timeout: 30000,
     })
   }
 

@@ -49,9 +49,9 @@ export function useFileUploadHandler(options: FileUploadHandlerOptions) {
         size: file.size,
         type: file.type,
         uploadTime: new Date().toISOString(),
-        status: 'success' as const
+        status: 'success' as const,
       }
-      messageStore.addUploadedFile( uploadedFile)
+      messageStore.addUploadedFile(uploadedFile)
       messageApi.success(`${file.name} 上传成功`)
     }
   }
@@ -66,7 +66,7 @@ export function useFileUploadHandler(options: FileUploadHandlerOptions) {
       'text/plain',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/markdown'
+      'text/markdown',
     ]
 
     if (!allowedTypes.includes(file.type)) {

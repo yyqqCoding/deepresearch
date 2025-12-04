@@ -20,10 +20,10 @@ import { MessageOutlined } from '@ant-design/icons-vue'
 import { h, reactive } from 'vue'
 import { v1, v3, v4, v5 } from 'uuid'
 import { useRoute, useRouter } from 'vue-router'
-import {addConvInfo} from "@/db/conversationDB";
-import {useMessageStore} from "@/store/MessageStore";
-import {toRaw} from "vue-demi";
-import {deepToRaw} from "@/utils/proxy";
+import { addConvInfo } from '@/db/conversationDB'
+import { useMessageStore } from '@/store/MessageStore'
+import { toRaw } from 'vue-demi'
+import { deepToRaw } from '@/utils/proxy'
 export const useConversationStore = () =>
   defineStore('conversationStore', {
     state(): { editKey: string | null; current: number; conversations: any } {
@@ -39,18 +39,18 @@ export const useConversationStore = () =>
     },
     actions: {
       async newOne(firstMessage: any | null = null) {
-          const newVar = {
-              key: v4(),
-              title: firstMessage || 'Unnamed conversation',
-              messages: null,
-          }
-          const message = useMessageStore()
-          // save lastMessage
-          await addConvInfo(message.convId, deepToRaw(message))
-          await message.init(newVar.key)
-          this.conversations = [newVar, ...this.conversations]
-          this.current++
-          return newVar
+        const newVar = {
+          key: v4(),
+          title: firstMessage || 'Unnamed conversation',
+          messages: null,
+        }
+        const message = useMessageStore()
+        // save lastMessage
+        await addConvInfo(message.convId, deepToRaw(message))
+        await message.init(newVar.key)
+        this.conversations = [newVar, ...this.conversations]
+        this.current++
+        return newVar
       },
       updateTitle(key: any, title: any) {
         this.conversations.map((item: any) => {
@@ -60,9 +60,11 @@ export const useConversationStore = () =>
         })
       },
       contains(key: any) {
-        return this.conversations.filter((item: any) => {
-          return item.key === key
-        }).length>0
+        return (
+          this.conversations.filter((item: any) => {
+            return item.key === key
+          }).length > 0
+        )
       },
       delete(key: any) {
         this.conversations = this.conversations.filter((item: any) => {

@@ -31,8 +31,8 @@ const service: AxiosInstance = axios.create({
   timeout: 30 * 1000,
   withCredentials: false, // 跨域请求时是否需要使用凭证
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 })
 const request: AxiosInterceptorManager<InternalAxiosRequestConfig> = service.interceptors.request
 const response: AxiosInterceptorManager<AxiosResponse> = service.interceptors.response
@@ -92,7 +92,7 @@ response.use(
       code: 500,
       status: 'error',
       message: error.message || '网络请求失败',
-      data: null
+      data: null,
     }
     message.error(networkError.message)
     return Promise.reject(networkError)
@@ -125,7 +125,7 @@ export function get<T = any>(url: string, params?: any): Promise<T> {
   return apiRequest<T>({
     method: 'GET',
     url,
-    params
+    params,
   })
 }
 
@@ -136,7 +136,7 @@ export function post<T = any>(url: string, data?: any): Promise<T> {
   return apiRequest<T>({
     method: 'POST',
     url,
-    data
+    data,
   })
 }
 
@@ -147,7 +147,7 @@ export function put<T = any>(url: string, data?: any): Promise<T> {
   return apiRequest<T>({
     method: 'PUT',
     url,
-    data
+    data,
   })
 }
 
@@ -158,7 +158,7 @@ export function del<T = any>(url: string, params?: any): Promise<T> {
   return apiRequest<T>({
     method: 'DELETE',
     url,
-    params
+    params,
   })
 }
 

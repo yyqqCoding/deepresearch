@@ -24,7 +24,7 @@
           <img src="/logo.svg" alt="DeepResearch" class="logo" />
           <span class="title">DeepResearch</span>
         </div>
-        
+
         <!-- 中间：模式切换标签页 -->
         <div class="navbar-center">
           <a-tabs v-model:activeKey="currentMode" @change="switchMode" class="mode-tabs">
@@ -33,7 +33,7 @@
             <a-tab-pane key="config" :tab="tabLabel('system_config', 'ControlOutlined')" />
           </a-tabs>
         </div>
-        
+
         <!-- 右侧：语言切换和用户下拉框 -->
         <div class="navbar-right">
           <ASegmented v-model:value="locale" :options="i18nConfig.opts" />
@@ -58,7 +58,7 @@
         </div>
       </div>
     </div>
-    
+
     <!-- 下部分：页面内容 -->
     <div class="main-content">
       <Flex justify="space-between" gap="middle" class="body">
@@ -68,44 +68,44 @@
               <MenuOutlined />
             </a-button>
           </Flex>
-          
+
           <a-divider />
-        
-        <!-- 聊天模式侧边栏 -->
-        <div v-if="currentMode === 'chat'" class="sidebar-content">
-          <a-menu :selectable="false">
-            <a-menu-item @click="createNewConversation" key="create_new_conversation">
-              <FormOutlined />
-              <Gap width="2px" />
-              <span v-if="!collapse">{{ $t('create_new_conversation') }}</span>
-            </a-menu-item>
-            <a-menu-item key="clear_all" @click="clearAllConversations">
-              <DeleteOutlined />
-              <Gap width="2px" />
-              <span v-if="!collapse">清空所有会话</span>
-            </a-menu-item>
-          </a-menu>
-          <a-divider />
-          <Conversations
-            v-if="!collapse"
-            style="width: 100%"
-            :onActiveChange="changeConv"
-            :defaultActiveKey="currentConvKey"
-            :items="conversationItems"
-            :menu="menuConfig"
-          >
-          </Conversations>
-        </div>
-        
-        <!-- 知识库模式侧边栏 -->
-        <div v-else-if="currentMode === 'knowledge'" class="sidebar-content">
-          <a-menu :selectable="false">
-            <a-menu-item key="knowledge_management" @click="goToKnowledgeManagement">
-              <FileTextOutlined />
-              <Gap width="2px" />
-              <span v-if="!collapse">{{ $t('knowledge_management') }}</span>
-            </a-menu-item>
-            <!-- <a-menu-item key="document_upload">
+
+          <!-- 聊天模式侧边栏 -->
+          <div v-if="currentMode === 'chat'" class="sidebar-content">
+            <a-menu :selectable="false">
+              <a-menu-item @click="createNewConversation" key="create_new_conversation">
+                <FormOutlined />
+                <Gap width="2px" />
+                <span v-if="!collapse">{{ $t('create_new_conversation') }}</span>
+              </a-menu-item>
+              <a-menu-item key="clear_all" @click="clearAllConversations">
+                <DeleteOutlined />
+                <Gap width="2px" />
+                <span v-if="!collapse">清空所有会话</span>
+              </a-menu-item>
+            </a-menu>
+            <a-divider />
+            <Conversations
+              v-if="!collapse"
+              style="width: 100%"
+              :onActiveChange="changeConv"
+              :defaultActiveKey="currentConvKey"
+              :items="conversationItems"
+              :menu="menuConfig"
+            >
+            </Conversations>
+          </div>
+
+          <!-- 知识库模式侧边栏 -->
+          <div v-else-if="currentMode === 'knowledge'" class="sidebar-content">
+            <a-menu :selectable="false">
+              <a-menu-item key="knowledge_management" @click="goToKnowledgeManagement">
+                <FileTextOutlined />
+                <Gap width="2px" />
+                <span v-if="!collapse">{{ $t('knowledge_management') }}</span>
+              </a-menu-item>
+              <!-- <a-menu-item key="document_upload">
               <UploadOutlined />
               <Gap width="2px" />
               <span v-if="!collapse">{{ $t('document_upload') }}</span>
@@ -115,20 +115,20 @@
               <Gap width="2px" />
               <span v-if="!collapse">{{ $t('knowledge_search') }}</span>
             </a-menu-item> -->
-          </a-menu>
-        </div>
-        
-        <!-- 系统配置模式侧边栏 -->
-        <div v-else-if="currentMode === 'config'" class="sidebar-content">
-          <a-menu :selectable="false">
-            <a-menu-item key="system_settings">
-              <SettingOutlined />
-              <Gap width="2px" />
-              <span v-if="!collapse">系统设置</span>
-            </a-menu-item>
-          </a-menu>
-        </div>
-      </Flex>
+            </a-menu>
+          </div>
+
+          <!-- 系统配置模式侧边栏 -->
+          <div v-else-if="currentMode === 'config'" class="sidebar-content">
+            <a-menu :selectable="false">
+              <a-menu-item key="system_settings">
+                <SettingOutlined />
+                <Gap width="2px" />
+                <span v-if="!collapse">系统设置</span>
+              </a-menu-item>
+            </a-menu>
+          </div>
+        </Flex>
         <Flex class="right" flex="1" vertical>
           <Flex class="content" style="width: 100%">
             <RouterView :key="route.fullPath" />
@@ -182,8 +182,8 @@ import { useAuthStore } from '@/store/AuthStore'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { useMessageStore } from '@/store/MessageStore'
-import {findConvInfo, removeConvInfo} from "@/db/conversationDB";
-import { message } from 'ant-design-vue';
+import { findConvInfo, removeConvInfo } from '@/db/conversationDB'
+import { message } from 'ant-design-vue'
 const router = useRouter()
 const route = useRoute()
 const username = useAuthStore().token
@@ -199,7 +199,7 @@ const currentMode = ref('chat')
 // 监听路由变化更新当前模式
 watch(
   () => route.path,
-  (path) => {
+  path => {
     if (path.startsWith('/chat')) currentMode.value = 'chat'
     else if (path.startsWith('/knowledge')) currentMode.value = 'knowledge'
     else if (path.startsWith('/config')) currentMode.value = 'config'
@@ -219,7 +219,9 @@ const tabLabel = (textKey: string, iconName: string) => {
   return (
     <span style="display: flex; align-items: center; gap: 6px;">
       <IconComponent />
-      <span>{textKey === 'chat' ? '聊天' : textKey === 'knowledge_base' ? '知识库' : '系统配置'}</span>
+      <span>
+        {textKey === 'chat' ? '聊天' : textKey === 'knowledge_base' ? '知识库' : '系统配置'}
+      </span>
     </span>
   )
 }
@@ -296,7 +298,7 @@ const menuConfig: ConversationsProps['menu'] = conversation => ({
 })
 
 function createNewConversation() {
-  conversationStore.newOne('Unnamed conversation').then(res=>{
+  conversationStore.newOne('Unnamed conversation').then(res => {
     changeConv(res.key)
   })
 }
@@ -334,18 +336,18 @@ const clearAllConversations = () => {
     onOk() {
       // 清空会话存储
       conversationStore.clearAll()
-      
+
       // 清空消息历史
       const messageStore = useMessageStore()
       messageStore.history = {}
       messageStore.currentState = {}
-      
+
       // 跳转到默认聊天页面
       router.push('/chat')
-      
+
       // 显示成功提示
       message.success('所有会话已清空')
-    }
+    },
   })
 }
 
@@ -367,8 +369,8 @@ onMounted(() => {
 function changeConv(id: any) {
   const messageStore = useMessageStore()
   if (messageStore.current?.runFlag) {
-    AntMessage.warn("对话正在进行，无法切换")
-  }else {
+    AntMessage.warn('对话正在进行，无法切换')
+  } else {
     router.push(`/chat/${id}`)
   }
 }
@@ -486,11 +488,11 @@ watch(locale, value => {
 
   .left {
     transition: width 0.3s ease;
-    
+
     .sidebar-content {
       flex: 1;
       overflow-y: auto;
-      
+
       :deep(.ant-menu-light) {
         background: none;
         padding: 0 12px;
@@ -510,10 +512,10 @@ watch(locale, value => {
 /* 顶部导航栏中的模式切换标签页样式 */
 .navbar-center .mode-tabs {
   width: 100%;
-  
+
   :deep(.ant-tabs-nav) {
     margin: 0;
-    
+
     .ant-tabs-tab {
       padding: 6px 16px;
       margin: 0 2px;
@@ -521,18 +523,18 @@ watch(locale, value => {
       transition: all 0.3s ease;
       position: relative;
       background: transparent;
-      
+
       &:hover {
         background: rgba(24, 144, 255, 0.08);
       }
-      
+
       &.ant-tabs-tab-active {
         background: transparent;
         color: #1890ff;
         font-weight: 500;
       }
     }
-    
+
     .ant-tabs-ink-bar {
       background: #1890ff;
       height: 2px;
@@ -546,19 +548,19 @@ watch(locale, value => {
   .navbar-content {
     padding: 0 16px;
   }
-  
+
   .navbar-center {
     margin: 0 20px;
   }
-  
+
   .title {
     display: none;
   }
-  
+
   .username {
     display: none;
   }
-  
+
   .body {
     .left {
       position: fixed;
@@ -567,12 +569,12 @@ watch(locale, value => {
       z-index: 1000;
       height: 100%;
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-      
+
       &.collapsed {
         transform: translateX(-100%);
       }
     }
-    
+
     .right {
       margin-left: 0;
     }

@@ -36,15 +36,14 @@ export interface MessageState<Message = any> {
   threadId: string
 }
 
-
 /**
  * 消息存储类型定义
  */
 export interface MsgType<Message> {
   convId: string
-    history:  MessageInfo<any>[]
+  history: MessageInfo<any>[]
   currentState: MessageState<Message>
   htmlReport: string[]
-  report: { [key: string]:  any[] }
-  uploadedFiles: any[],
+  report: { [key: string]: any[] }
+  uploadedFiles: any[]
 }

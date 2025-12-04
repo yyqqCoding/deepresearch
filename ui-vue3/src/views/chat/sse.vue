@@ -33,7 +33,11 @@ function request() {
         readableStream: response.body as ReadableStream,
       })) {
         if (idx > 10) break
-        controller.enqueue(new TextEncoder().encode(`event: message\ndata: ${JSON.stringify({id: idx, content: chunk.data})}\n\n`))
+        controller.enqueue(
+          new TextEncoder().encode(
+            `event: message\ndata: ${JSON.stringify({ id: idx, content: chunk.data })}\n\n`
+          )
+        )
         idx++
       }
       controller.close()
@@ -75,16 +79,16 @@ async function readStream() {
     for await (const chunk of XStream({
       readableStream,
     })) {
-    lines.value = [
-      ...lines.value,
-      {
-        event: 'message',
-        data: JSON.stringify({
-          content: chunk.data,
-        }),
-      },
-    ]
-  }
+      lines.value = [
+        ...lines.value,
+        {
+          event: 'message',
+          data: JSON.stringify({
+            content: chunk.data,
+          }),
+        },
+      ]
+    }
   } catch (error) {
     console.error('Failed to read stream:', error)
   }

@@ -4,68 +4,60 @@
       <a-card style="height: 100%">
         <template #title>
           <Flex justify="space-between" align="center">
-              <span style="font-weight: 500;">
-                {{ endFlag ? '报告' : '思考过程' }}
-              </span>
+            <span style="font-weight: 500">
+              {{ endFlag ? '报告' : '思考过程' }}
+            </span>
             <Flex gap="small" align="center" v-if="endFlag">
               <Button type="text" size="small" @click="handleOnlineReport">
-                <GlobalOutlined/>
+                <GlobalOutlined />
                 在线报告
               </Button>
               <Button type="text" size="small" @click="handleDownloadReport">
-                <DownloadOutlined/>
+                <DownloadOutlined />
                 下载报告
               </Button>
               <Button type="text" size="small" @click="handleClose">
-                <CloseOutlined/>
+                <CloseOutlined />
               </Button>
             </Flex>
           </Flex>
         </template>
         <!-- 思考过程 -->
         <div class="message-list" v-if="items && items.length > 0 && !endFlag">
-          <ThoughtChain
-              :items="items"
-              collapsible
-          />
+          <ThoughtChain :items="items" collapsible />
         </div>
         <!-- END 节点返回之后显示的内容 -->
         <div v-else-if="endFlag" class="end-content">
-          <MD :content="endContent"/>
+          <MD :content="endContent" />
           <!-- 思考过程 -->
           <a-collapse :bordered="false" class="thought-collapse">
             <a-collapse-panel header="参考来源" key="1" class="thought-panel">
-              <ReferenceSources :sources="sources"/>
+              <ReferenceSources :sources="sources" />
             </a-collapse-panel>
             <a-collapse-panel header="思路" key="2" class="thought-panel">
-              <ThoughtChain
-                  :items="items"
-                  collapsible
-              />
+              <ThoughtChain :items="items" collapsible />
             </a-collapse-panel>
           </a-collapse>
         </div>
 
         <!-- 无消息记录时的提示 -->
-        <div v-else class="no-messages">
-          暂无消息记录
-        </div>
+        <div v-else class="no-messages">暂无消息记录</div>
       </a-card>
 
       <!-- HTML 渲染组件弹窗 -->
       <a-modal
-          v-model:open="htmlModalVisible"
-          title="HTML 报告"
-          :width="1200"
-          :footer="null"
-          :destroyOnClose="true"
-          @cancel="closeHtmlModal"
+        v-model:open="htmlModalVisible"
+        title="HTML 报告"
+        :width="1200"
+        :footer="null"
+        :destroyOnClose="true"
+        @cancel="closeHtmlModal"
       >
         <HtmlRenderer
-            ref="htmlRendererRef"
-            :htmlChunks="htmlChunks"
-            :loading="htmlLoading"
-            style="height: 600px;"
+          ref="htmlRendererRef"
+          :htmlChunks="htmlChunks"
+          :loading="htmlLoading"
+          style="height: 600px"
         />
       </a-modal>
     </Flex>
@@ -73,26 +65,26 @@
 </template>
 
 <script setup lang="ts">
-import {Flex, Button, Modal} from 'ant-design-vue'
+import { Flex, Button, Modal } from 'ant-design-vue'
 import {
   CloseOutlined,
   LoadingOutlined,
   CheckCircleOutlined,
   GlobalOutlined,
-  DownloadOutlined
+  DownloadOutlined,
 } from '@ant-design/icons-vue'
-import {parseJsonTextStrict} from '@/utils/jsonParser';
-import {useMessageStore} from '@/store/MessageStore'
-import {computed, h, watch, onUnmounted, onMounted, ref} from 'vue'
-import {ThoughtChain, type ThoughtChainProps, type ThoughtChainItem} from 'ant-design-x-vue';
+import { parseJsonTextStrict } from '@/utils/jsonParser'
+import { useMessageStore } from '@/store/MessageStore'
+import { computed, h, watch, onUnmounted, onMounted, ref } from 'vue'
+import { ThoughtChain, type ThoughtChainProps, type ThoughtChainItem } from 'ant-design-x-vue'
 import MD from '@/components/md/index.vue'
 import HtmlRenderer from '@/components/html/index.vue'
 import ReferenceSources from '@/components/reference-sources/index.vue'
-import {XStreamBody} from '@/utils/stream'
-import {reportService} from '@/services'
-import type {NormalNode} from '@/types/node';
-import {addConvInfo} from "@/db/conversationDB";
-import {deepToRaw} from "@/utils/proxy";
+import { XStreamBody } from '@/utils/stream'
+import { reportService } from '@/services'
+import type { NormalNode } from '@/types/node'
+import { addConvInfo } from '@/db/conversationDB'
+import { deepToRaw } from '@/utils/proxy'
 
 const messageStore = useMessageStore()
 
@@ -111,7 +103,7 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   visible: false,
   convId: '',
-  threadId: ''
+  threadId: '',
 })
 
 // HTML 渲染组件相关状态
@@ -126,7 +118,7 @@ const sources = ref([])
 
 const arrayTemp: ThoughtChainProps['items'] = []
 // 用于缓存llm_stream节点的内容
-const llmStreamCache = new Map<string, { item: ThoughtChainItem, content: string }>()
+const llmStreamCache = new Map<string, { item: ThoughtChainItem; content: string }>()
 // 从messageStore 拿出消息，然后进行解析并且渲染
 const items = computed(() => {
   // 思维链显示的列表
@@ -208,7 +200,7 @@ const appendPendingNode = () => {
     title: '思考中',
     description: '正在等待思考结果',
     icon: h(LoadingOutlined),
-    status: 'pending'
+    status: 'pending',
   }
   arrayTemp.push(pendingItem)
 }
@@ -220,7 +212,7 @@ const processLlmStreamNode = (node: any, key: string, cacheKey: string): Thought
     // 累积新的内容
     cached.content += node[key]
     // 更新MD组件的内容
-    cached.item.content = h(MD, {content: cached.content})
+    cached.item.content = h(MD, { content: cached.content })
     // 结束组件
     if (node.finishReason === 'STOP') {
       cached.item.status = 'success'
@@ -238,13 +230,13 @@ const processLlmStreamNode = (node: any, key: string, cacheKey: string): Thought
       description: '正在生成内容',
       icon: h(LoadingOutlined),
       status: 'pending',
-      content: h(MD, {content: initialContent})
+      content: h(MD, { content: initialContent }),
     }
 
     // 缓存该节点
     llmStreamCache.set(cacheKey, {
       item,
-      content: initialContent
+      content: initialContent,
     })
 
     return item
@@ -272,8 +264,10 @@ const processJsonNode = (node: any) => {
       description = '优化查询以获得更好的搜索结果'
       if (node.content?.optimize_queries && Array.isArray(node.content.optimize_queries)) {
         const queries = node.content.optimize_queries
-        const markdownContent = queries.map((query: any, index: number) => `${index + 1}. ${query}`).join('\n')
-        content = h(MD, {content: markdownContent})
+        const markdownContent = queries
+          .map((query: any, index: number) => `${index + 1}. ${query}`)
+          .join('\n')
+        content = h(MD, { content: markdownContent })
       }
       break
 
@@ -281,7 +275,7 @@ const processJsonNode = (node: any) => {
       title = node.displayTitle
       description = '正在收集和分析背景信息'
       if (node.siteInformation && Array.isArray(node.siteInformation)) {
-        content = h(ReferenceSources, {sources: node.siteInformation[0]})
+        content = h(ReferenceSources, { sources: node.siteInformation[0] })
         sources.value = node.siteInformation
       }
       break
@@ -290,11 +284,13 @@ const processJsonNode = (node: any) => {
       title = node.displayTitle
       const json = JSON.parse(node.content)
       description = json.title
-      const stepsContent = json.steps.map((step: any, index: number) => {
-        const {title, description} = step
-        return `### ${index + 1}. ${title}\n\n${description}\n\n---\n`
-      }).join('\n')
-      content = h(MD, {content: stepsContent})
+      const stepsContent = json.steps
+        .map((step: any, index: number) => {
+          const { title, description } = step
+          return `### ${index + 1}. ${title}\n\n${description}\n\n---\n`
+        })
+        .join('\n')
+      content = h(MD, { content: stepsContent })
       break
 
     case 'human_feedback':
@@ -302,12 +298,11 @@ const processJsonNode = (node: any) => {
       description = '开始研究'
       break
 
-
     case 'reporter':
       title = node.displayTitle
       description = '生成最终研究报告'
       if (node.content) {
-        content = h(MD, {content: node.content})
+        content = h(MD, { content: node.content })
         endContent.value = node.content
       }
       break
@@ -317,7 +312,7 @@ const processJsonNode = (node: any) => {
       description = '研究完成'
       endFlag.value = true
       if (node.content) {
-        content = h(MD, {content: node.content.final_report})
+        content = h(MD, { content: node.content.final_report })
         endContent.value = node.content.final_report
       }
       messageStore.currentState.runFlag = false
@@ -345,10 +340,13 @@ onMounted(() => {
   arrayTemp.length = 0
 })
 // 监听convId变化，清理缓存
-watch(() => props.threadId, () => {
-  llmStreamCache.clear()
-  arrayTemp.length = 0
-})
+watch(
+  () => props.threadId,
+  () => {
+    llmStreamCache.clear()
+    arrayTemp.length = 0
+  }
+)
 
 // 组件卸载时清理缓存
 onUnmounted(() => {
@@ -381,7 +379,7 @@ const handleOnlineReport = async () => {
       headers: {
         'Content-Type': 'application/json',
         Accept: 'text/event-stream',
-      }
+      },
     })
 
     await xStreamBody.readStream((chunk: any) => {
@@ -397,7 +395,9 @@ const handleOnlineReport = async () => {
     console.error('加载HTML报告失败:', e)
     htmlLoading.value = false
     // 如果出错，可以显示错误信息
-    htmlChunks.value = [`<div style="color: red; padding: 20px;">加载HTML报告时出错: ${e.statusText || '未知错误'}</div>`]
+    htmlChunks.value = [
+      `<div style="color: red; padding: 20px;">加载HTML报告时出错: ${e.statusText || '未知错误'}</div>`,
+    ]
   }
 }
 
@@ -425,7 +425,6 @@ const handleDownloadReport = async () => {
     // 可以显示错误提示
   }
 }
-
 </script>
 
 <style lang="less" scoped>

@@ -12,53 +12,53 @@
  */
 export function parseJsonTextStrict(text: string): any[] {
   if (!text || typeof text !== 'string') {
-    return [];
+    return []
   }
 
-  const result: any[] = [];
-  const trimmedText = text.trim();
+  const result: any[] = []
+  const trimmedText = text.trim()
 
   if (!trimmedText) {
-    return result;
+    return result
   }
 
-  let currentIndex = 0;
+  let currentIndex = 0
 
   while (currentIndex < trimmedText.length) {
     // 跳过空白字符
     while (currentIndex < trimmedText.length && /\s/.test(trimmedText[currentIndex])) {
-      currentIndex++;
+      currentIndex++
     }
 
     if (currentIndex >= trimmedText.length) {
-      break;
+      break
     }
 
     // 查找JSON对象的开始
     if (trimmedText[currentIndex] === '{') {
-      const startIndex = currentIndex;
-      const jsonEndIndex = findJsonObjectEnd(trimmedText, currentIndex);
+      const startIndex = currentIndex
+      const jsonEndIndex = findJsonObjectEnd(trimmedText, currentIndex)
 
       if (jsonEndIndex !== -1) {
-        const jsonStr = trimmedText.substring(startIndex, jsonEndIndex + 1);
+        const jsonStr = trimmedText.substring(startIndex, jsonEndIndex + 1)
         try {
-          const jsonObj = JSON.parse(jsonStr);
-          result.push(jsonObj);
+          const jsonObj = JSON.parse(jsonStr)
+          result.push(jsonObj)
         } catch (error) {
-          console.warn('解析JSON对象失败:', jsonStr, error);
+          console.warn('解析JSON对象失败:', jsonStr, error)
         }
-        currentIndex = jsonEndIndex + 1;
+        currentIndex = jsonEndIndex + 1
       } else {
         // 如果找不到完整的JSON对象，跳过当前字符
-        currentIndex++;
+        currentIndex++
       }
     } else {
       // 跳过非JSON字符
-      currentIndex++;
+      currentIndex++
     }
   }
 
-  return result;
+  return result
 }
 
 /**
@@ -68,49 +68,47 @@ export function parseJsonTextStrict(text: string): any[] {
  * @returns JSON对象结束位置的索引，如果找不到返回-1
  */
 function findJsonObjectEnd(text: string, startIndex: number): number {
-  let braceCount = 0;
-  let inString = false;
-  let escapeNext = false;
+  let braceCount = 0
+  let inString = false
+  let escapeNext = false
 
   for (let i = startIndex; i < text.length; i++) {
-    const char = text[i];
+    const char = text[i]
 
     if (escapeNext) {
       // 如果前一个字符是转义符，跳过当前字符
-      escapeNext = false;
-      continue;
+      escapeNext = false
+      continue
     }
 
     if (char === '\\' && inString) {
       // 遇到转义符
-      escapeNext = true;
-      continue;
+      escapeNext = true
+      continue
     }
 
     if (char === '"' && !escapeNext) {
       // 遇到引号，切换字符串状态
-      inString = !inString;
-      continue;
+      inString = !inString
+      continue
     }
 
     if (!inString) {
       if (char === '{') {
-        braceCount++;
+        braceCount++
       } else if (char === '}') {
-        braceCount--;
+        braceCount--
         if (braceCount === 0) {
-          return i;
+          return i
         }
       }
     }
   }
 
-  return -1; // 没有找到完整的JSON对象
+  return -1 // 没有找到完整的JSON对象
 }
-
-
 
 /**
  * 默认导出解析函数
  */
-export default parseJsonTextStrict;
+export default parseJsonTextStrict

@@ -59,14 +59,14 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
       {
         title: '请稍后...',
         icon: h(LoadingOutlined),
-        status: 'pending'
-      }
+        status: 'pending',
+      },
     ]
     return h(
       Card,
       { style: { width: '500px', backgroundColor: '#EEF2F8' } },
       {
-        default: () => h(ThoughtChain, { items })
+        default: () => h(ThoughtChain, { items }),
       }
     )
   }
@@ -76,16 +76,20 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
    */
   const buildStartDSThoughtChain = (jsonArray: any[]): VNode => {
     // 获取背景调查节点
-    const backgroundInvestigatorNodeArray = jsonArray.filter((item) => item.nodeName === 'background_investigator')
+    const backgroundInvestigatorNodeArray = jsonArray.filter(
+      item => item.nodeName === 'background_investigator'
+    )
     if (backgroundInvestigatorNodeArray.length === 0) {
       return buildPendingNodeThoughtChain(jsonArray)
     }
 
     const backgroundInvestigatorNode = backgroundInvestigatorNodeArray[0]
     const results = backgroundInvestigatorNode.siteInformation
-    const markdownContent = results.map((result: any, index: number) => {
-      return `${index + 1}. [${result.title}](${result.url})\n\n`
-    }).join('\n')
+    const markdownContent = results
+      .map((result: any, index: number) => {
+        return `${index + 1}. [${result.title}](${result.url})\n\n`
+      })
+      .join('\n')
 
     const items: ThoughtChainProps['items'] = [
       {
@@ -114,8 +118,8 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
             default: () => [
               messageStore.isEnd(backgroundInvestigatorNode.graphId.thread_id)
                 ? h(Button, { type: 'link' }, () => '已完成')
-                : h(Button, { type: 'primary', onClick: onDeepResearch }, () => '开始研究')
-            ]
+                : h(Button, { type: 'primary', onClick: onDeepResearch }, () => '开始研究'),
+            ],
           }
         ),
         extra: '',
@@ -128,12 +132,13 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
         Card,
         { style: { width: '500px', backgroundColor: '#EEF2F8' } },
         {
-          default: () => h(ThoughtChain, {
-            items,
-            collapsible: { expandedKeys: collapsible.value, onExpand }
-          })
+          default: () =>
+            h(ThoughtChain, {
+              items,
+              collapsible: { expandedKeys: collapsible.value, onExpand },
+            }),
         }
-      )
+      ),
     ])
   }
 
@@ -142,15 +147,22 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
    */
   const buildOnDSThoughtChain = (jsonArray: any[]): VNode => {
     // 获取背景调查节点
-    const backgroundInvestigatorNodeArray = jsonArray.filter((item) => item.nodeName === 'background_investigator')
-    if (backgroundInvestigatorNodeArray.length === 0 || !backgroundInvestigatorNodeArray[0].siteInformation) {
+    const backgroundInvestigatorNodeArray = jsonArray.filter(
+      item => item.nodeName === 'background_investigator'
+    )
+    if (
+      backgroundInvestigatorNodeArray.length === 0 ||
+      !backgroundInvestigatorNodeArray[0].siteInformation
+    ) {
       return buildPendingNodeThoughtChain(jsonArray)
     }
     const backgroundInvestigatorNode = backgroundInvestigatorNodeArray[0]
     const results: SiteInformation[] = backgroundInvestigatorNode.siteInformation[0]
-    const markdownContent = results.map((result: SiteInformation, index: number) => {
-      return `${index + 1}. [${result.title}](${result.url})\n\n`
-    }).join('\n')
+    const markdownContent = results
+      .map((result: SiteInformation, index: number) => {
+        return `${index + 1}. [${result.title}](${result.url})\n\n`
+      })
+      .join('\n')
 
     const items: ThoughtChainProps['items'] = [
       {
@@ -166,7 +178,7 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
         title: '正在分析结果',
         icon: h(LoadingOutlined),
         extra: '',
-      }
+      },
     ]
 
     return h('div', {}, [
@@ -175,12 +187,13 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
         Card,
         { style: { width: '500px', backgroundColor: '#EEF2F8' } },
         {
-          default: () => h(ThoughtChain, {
-            items,
-            collapsible: { expandedKeys: collapsible.value, onExpand }
-          })
+          default: () =>
+            h(ThoughtChain, {
+              items,
+              collapsible: { expandedKeys: collapsible.value, onExpand },
+            }),
         }
-      )
+      ),
     ])
   }
 
@@ -191,12 +204,16 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
     const items: ThoughtChainProps['items'] = []
 
     // 获取背景调查节点
-    const backgroundInvestigatorNode = jsonArray.filter((item) => item.nodeName === 'background_investigator')[0]
+    const backgroundInvestigatorNode = jsonArray.filter(
+      item => item.nodeName === 'background_investigator'
+    )[0]
     if (backgroundInvestigatorNode && backgroundInvestigatorNode.siteInformation) {
       const results: SiteInformation[] = backgroundInvestigatorNode.siteInformation[0]
-      const markdownContent = results.map((result: any, index: number) => {
-        return `${index + 1}. [${result.title}](${result.url})\n\n`
-      }).join('\n')
+      const markdownContent = results
+        .map((result: any, index: number) => {
+          return `${index + 1}. [${result.title}](${result.url})\n\n`
+        })
+        .join('\n')
 
       const item: ThoughtChainItem = {
         status: 'error',
@@ -210,8 +227,8 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
     }
 
     // 分析结果节点
-    const startNode = jsonArray.filter((item) => item.nodeName === '__START__')[0]
-    const humanFeedbackNode = jsonArray.filter((item) => item.nodeName === 'human_feedback')[0]
+    const startNode = jsonArray.filter(item => item.nodeName === '__START__')[0]
+    const humanFeedbackNode = jsonArray.filter(item => item.nodeName === 'human_feedback')[0]
     if (startNode || humanFeedbackNode) {
       const threadId = startNode ? startNode.graphId.thread_id : humanFeedbackNode.graphId.thread_id
       const completeItem: ThoughtChainItem = {
@@ -223,11 +240,16 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
           { style: { marginLeft: 'auto' }, gap: 'middle' },
           {
             default: () => [
-              h(Button, {
-                type: 'primary',
-                onClick: () => onOpenDeepResearch?.(threadId)
-              }, () => current.deepResearchDetail && current.threadId === threadId ? '关闭' : '打开')
-            ]
+              h(
+                Button,
+                {
+                  type: 'primary',
+                  onClick: () => onOpenDeepResearch?.(threadId),
+                },
+                () =>
+                  current.deepResearchDetail && current.threadId === threadId ? '关闭' : '打开'
+              ),
+            ],
           }
         ),
       }
@@ -238,7 +260,7 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
     const endItem: ThoughtChainItem = {
       title: '完成',
       icon: h(CheckCircleOutlined),
-      status: 'success'
+      status: 'success',
     }
 
     items.push(endItem)
@@ -248,12 +270,13 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
         Card,
         { style: { width: '500px', backgroundColor: '#EEF2F8' } },
         {
-          default: () => h(ThoughtChain, {
-            items,
-            collapsible: { expandedKeys: collapsible.value, onExpand }
-          })
+          default: () =>
+            h(ThoughtChain, {
+              items,
+              collapsible: { expandedKeys: collapsible.value, onExpand },
+            }),
         }
-      )
+      ),
     ])
   }
 

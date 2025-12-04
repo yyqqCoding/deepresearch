@@ -28,13 +28,14 @@
         <template #icon><PlusOutlined /></template>
         新增知识库
       </a-button>
-        <a-divider />
-      <a-table 
-        :data-source="dataSource" 
-        :columns="columns" 
-        row-key="kb_id" 
+      <a-divider />
+      <a-table
+        :data-source="dataSource"
+        :columns="columns"
+        row-key="kb_id"
         bordered
-        :scroll="{ x: 1000 }">
+        :scroll="{ x: 1000 }"
+      >
         <template #emptyText>
           <div style="text-align: center; padding: 60px 0; color: #8c8c8c">
             <FileTextOutlined style="font-size: 64px; margin-bottom: 16px; opacity: 0.5" />
@@ -57,11 +58,12 @@
                 <EditOutlined />
                 编辑
               </a-button>
-              <a-popconfirm 
-                title="确定删除该知识库？" 
+              <a-popconfirm
+                title="确定删除该知识库？"
                 @confirm="removeKb(record.kb_id)"
                 ok-text="确定"
-                cancel-text="取消">
+                cancel-text="取消"
+              >
                 <a-button size="small" danger class="action-btn">
                   <DeleteOutlined />
                   删除
@@ -74,38 +76,49 @@
     </a-card>
 
     <!-- 新增/编辑弹窗 -->
-    <a-modal 
-      v-model:open="editVisible" 
-      :title="editForm.kb_id ? '编辑知识库' : '新增知识库'" 
+    <a-modal
+      v-model:open="editVisible"
+      :title="editForm.kb_id ? '编辑知识库' : '新增知识库'"
       @ok="saveKb"
       :width="520"
-      :ok-button-props="{ style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' } }">
-      <a-form :model="editForm" :label-col="{ span: 5 }" :wrapper-col="{ span: 19 }" layout="vertical">
+      :ok-button-props="{
+        style: { background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', border: 'none' },
+      }"
+    >
+      <a-form
+        :model="editForm"
+        :label-col="{ span: 5 }"
+        :wrapper-col="{ span: 19 }"
+        layout="vertical"
+      >
         <a-form-item label="知识库名称" required>
-          <a-input 
-            v-model:value="editForm.kb_name" 
+          <a-input
+            v-model:value="editForm.kb_name"
             placeholder="请输入知识库名称"
             :max-length="50"
-            show-count>
+            show-count
+          >
             <template #prefix>
               <FolderOpenOutlined style="color: #667eea" />
             </template>
           </a-input>
         </a-form-item>
         <a-form-item label="描述信息">
-          <a-textarea 
-            v-model:value="editForm.kb_description" 
+          <a-textarea
+            v-model:value="editForm.kb_description"
             placeholder="请输入知识库描述信息"
             :rows="3"
             :max-length="200"
-            show-count />
+            show-count
+          />
         </a-form-item>
         <a-form-item label="分类标签">
-          <a-select 
-            v-model:value="editForm.category" 
-            placeholder="请选择分类标签"
-            allow-clear>
-            <a-select-option v-for="option in categoryOptions" :key="option.value" :value="option.value">
+          <a-select v-model:value="editForm.category" placeholder="请选择分类标签" allow-clear>
+            <a-select-option
+              v-for="option in categoryOptions"
+              :key="option.value"
+              :value="option.value"
+            >
               <span class="category-option">
                 <span class="category-dot" :style="{ background: option.color }"></span>
                 {{ option.label }}
@@ -117,22 +130,25 @@
     </a-modal>
 
     <!-- 文件列表和上传弹窗 -->
-    <a-modal 
-      v-model:open="filesVisible" 
-      :title="currentKb?.kb_name + ' - 文件管理'" 
-      width="800px" 
+    <a-modal
+      v-model:open="filesVisible"
+      :title="currentKb?.kb_name + ' - 文件管理'"
+      width="800px"
       :footer="null"
-      :body-style="{ padding: '0' }">
+      :body-style="{ padding: '0' }"
+    >
       <div class="files-header">
         <div class="stats-container">
-          <a-statistic 
-            title="文件总数" 
-            :value="currentKb?.files?.length || 0" 
-            :value-style="{ color: '#667eea', fontWeight: 600 }" />
-          <a-statistic 
-            title="总大小" 
-            :value="formatTotalSize(currentKb?.files)" 
-            :value-style="{ color: '#52c41a', fontWeight: 600 }" />
+          <a-statistic
+            title="文件总数"
+            :value="currentKb?.files?.length || 0"
+            :value-style="{ color: '#667eea', fontWeight: 600 }"
+          />
+          <a-statistic
+            title="总大小"
+            :value="formatTotalSize(currentKb?.files)"
+            :value-style="{ color: '#52c41a', fontWeight: 600 }"
+          />
         </div>
         <a-upload
           multiple
@@ -148,10 +164,11 @@
       </div>
 
       <div style="padding: 24px">
-        <a-list 
-          :data-source="currentKb?.files || []" 
-          item-layout="horizontal" 
-          :locale="{ emptyText: '暂无文件' }">
+        <a-list
+          :data-source="currentKb?.files || []"
+          item-layout="horizontal"
+          :locale="{ emptyText: '暂无文件' }"
+        >
           <template #renderItem="{ item }">
             <a-list-item class="file-item">
               <a-list-item-meta>
@@ -163,22 +180,22 @@
                 </template>
                 <template #description>
                   <div style="color: #6c757d; font-size: 13px">
-                    大小: {{ formatFileSize(item.size) }} · 上传时间: {{ formatTime(item.uploadTime) }}
+                    大小: {{ formatFileSize(item.size) }} · 上传时间:
+                    {{ formatTime(item.uploadTime) }}
                   </div>
                 </template>
               </a-list-item-meta>
               <template #actions>
                 <a-space>
-                  <a-tag 
-                    :color="getStatusColor(item.status)" 
-                    style="font-weight: 500">
+                  <a-tag :color="getStatusColor(item.status)" style="font-weight: 500">
                     {{ statusText(item.status) }}
                   </a-tag>
-                  <a-popconfirm 
-                    title="确定删除该文件？" 
+                  <a-popconfirm
+                    title="确定删除该文件？"
                     @confirm="removeFile(item.id)"
                     ok-text="确定"
-                    cancel-text="取消">
+                    cancel-text="取消"
+                  >
                     <a-button type="text" size="small" danger>
                       <template #icon><DeleteOutlined /></template>
                     </a-button>
@@ -196,13 +213,13 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, h } from 'vue'
 import { message } from 'ant-design-vue'
-import { 
-  FolderOpenOutlined, 
-  EditOutlined, 
+import {
+  FolderOpenOutlined,
+  EditOutlined,
   DeleteOutlined,
   PlusOutlined,
   UploadOutlined,
-  FileTextOutlined
+  FileTextOutlined,
 } from '@ant-design/icons-vue'
 import { ragService } from '@/services'
 import { useKnowledgeStore, type KnowledgeBase, type KnowledgeFile } from '@/store/KnowledgeStore'
@@ -213,72 +230,85 @@ const store = useKnowledgeStore()
 const categoryOptions = [
   { value: '产品管理', label: '产品管理', color: '#1890ff' },
   { value: '技术开发', label: '技术开发', color: '#722ed1' },
-  { value: '用户支持', label: '用户支持', color: '#52c41a' }
+  { value: '用户支持', label: '用户支持', color: '#52c41a' },
 ]
 
 const columns = [
-  { 
-    title: 'ID', 
-    dataIndex: 'kb_id', 
-    key: 'kb_id', 
+  {
+    title: 'ID',
+    dataIndex: 'kb_id',
+    key: 'kb_id',
     width: 260,
-    ellipsis: true
+    ellipsis: true,
   },
-  { 
-    title: '名称', 
-    dataIndex: 'kb_name', 
+  {
+    title: '名称',
+    dataIndex: 'kb_name',
     key: 'kb_name',
-    ellipsis: true
+    ellipsis: true,
   },
-  { 
-    title: '描述', 
-    dataIndex: 'kb_description', 
+  {
+    title: '描述',
+    dataIndex: 'kb_description',
     key: 'kb_description',
-    ellipsis: true
+    ellipsis: true,
   },
-  { 
-    title: '分类', 
-    dataIndex: 'category', 
-    key: 'category', 
+  {
+    title: '分类',
+    dataIndex: 'category',
+    key: 'category',
     width: 140,
     render: (text: string) => {
       const colors: Record<string, string> = {
-        '产品管理': 'blue',
-        '技术开发': 'purple',
-        '用户支持': 'green'
+        产品管理: 'blue',
+        技术开发: 'purple',
+        用户支持: 'green',
       }
-      return h('a-tag', { 
-        color: colors[text] || 'default',
-        style: { fontWeight: 500, borderRadius: '12px' }
-      }, () => text)
-    }
+      return h(
+        'a-tag',
+        {
+          color: colors[text] || 'default',
+          style: { fontWeight: 500, borderRadius: '12px' },
+        },
+        () => text
+      )
+    },
   },
-  { 
-    title: '文件数', 
-    key: 'fileCount', 
+  {
+    title: '文件数',
+    key: 'fileCount',
     width: 100,
     render: (text: any, record: KnowledgeBase) => {
-      return h('span', { 
-        style: { 
-          color: '#667eea', 
-          fontWeight: 600,
-          fontSize: '14px'
-        }
-      }, record.files?.length || 0)
-    }
+      return h(
+        'span',
+        {
+          style: {
+            color: '#667eea',
+            fontWeight: 600,
+            fontSize: '14px',
+          },
+        },
+        record.files?.length || 0
+      )
+    },
   },
-  { 
-    title: '操作', 
-    key: 'action', 
+  {
+    title: '操作',
+    key: 'action',
     width: 180,
-    fixed: 'right' as const
+    fixed: 'right' as const,
   },
 ]
 
 const dataSource = computed(() => store.knowledgeBases)
 
 const editVisible = ref(false)
-const editForm = reactive<{ kb_id?: string; kb_name: string; kb_description: string; category: string }>({
+const editForm = reactive<{
+  kb_id?: string
+  kb_name: string
+  kb_description: string
+  category: string
+}>({
   kb_name: '',
   kb_description: '',
   category: '',
@@ -299,20 +329,20 @@ function saveKb() {
     message.warning('请输入名称')
     return
   }
-  
+
   const action = editForm.kb_id ? '更新' : '新增'
   const params = {
     kb_name: editForm.kb_name,
     kb_description: editForm.kb_description,
     category: editForm.category || '未分类',
   }
-  
+
   if (editForm.kb_id) {
     store.updateKnowledgeBase(editForm.kb_id, params)
   } else {
     store.addKnowledgeBase(params)
   }
-  
+
   message.success(`${action}成功`)
   editVisible.value = false
 }
@@ -334,19 +364,24 @@ function openFiles(record: KnowledgeBase) {
 
 function beforeUpload(file: File) {
   // 检查文件类型
-  const allowedTypes = ['application/pdf', 'text/plain', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+  const allowedTypes = [
+    'application/pdf',
+    'text/plain',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ]
   if (!allowedTypes.includes(file.type)) {
     message.error('只支持 PDF、TXT、DOC、DOCX 格式的文件')
     return false
   }
-  
+
   // 检查文件大小（限制为 10MB）
   const maxSize = 10 * 1024 * 1024
   if (file.size > maxSize) {
     message.error('文件大小不能超过 10MB')
     return false
   }
-  
+
   // 使用自定义上传
   return true
 }
@@ -355,7 +390,7 @@ const statusMap = {
   success: { text: '已完成', color: 'success' },
   error: { text: '失败', color: 'error' },
   processing: { text: '上传中', color: 'processing' },
-  uploading: { text: '上传中', color: 'processing' }
+  uploading: { text: '上传中', color: 'processing' },
 }
 
 function statusText(status: KnowledgeFile['status']) {
@@ -389,23 +424,23 @@ async function handleBatchUpload(options: any) {
     message.error('请先选择知识库')
     return
   }
-  
+
   const file = options.file as File
   const kb = currentKb.value
-  
+
   // 添加文件到本地状态，初始状态为上传中
   const added = store.addFileToKnowledgeBase(kb.kb_id, {
     name: file.name,
     size: file.size,
-    uploadTime: new Date().toISOString()
+    uploadTime: new Date().toISOString(),
   })
-  
+
   if (!added) {
     message.error('添加文件失败')
     options.onError?.(new Error('添加文件失败'))
     return
   }
-  
+
   try {
     // 构建表单数据
     const formData = new FormData()
@@ -421,20 +456,19 @@ async function handleBatchUpload(options: any) {
     // 发送上传请求
     const res = await ragService.batchUploadFiles({
       files: file,
-      session_id: kb.kb_id
+      session_id: kb.kb_id,
     })
-    
+
     // 更新文件状态为成功
     store.updateFileStatus(kb.kb_id, added.id, 'success')
     message.success(`${file.name} 上传成功`)
     options.onSuccess?.(res)
-    
   } catch (error: any) {
     console.error('文件上传失败:', error)
-    
+
     // 更新文件状态为失败
     store.updateFileStatus(kb.kb_id, added.id, 'error')
-    
+
     // 根据错误类型显示不同的错误信息
     let errorMessage = `${file.name} 上传失败`
     if (error.code === 'ECONNABORTED') {
@@ -446,7 +480,7 @@ async function handleBatchUpload(options: any) {
     } else if (error.response?.data?.message) {
       errorMessage += `：${error.response.data.message}`
     }
-    
+
     message.error(errorMessage)
     options.onError?.(error)
   }
@@ -530,28 +564,27 @@ onMounted(() => {
     }
   }
 
-
   .add-btn {
     border-radius: 6px;
   }
 }
 
-  .files-header {
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 24px;
-    background: #fafafa;
-    border-radius: 8px;
-    border: 1px solid #f0f0f0;
+.files-header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
 
-    .stats-container {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+  .stats-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
+}
 
 // 全局样式增强
 :deep(.ant-modal-content) {

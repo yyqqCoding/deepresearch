@@ -30,7 +30,7 @@ export function useMessageParser(options: MessageParserOptions) {
    * 查找指定名称的节点
    */
   const findNode = (jsonArray: NormalNode[], nodeName: string): NormalNode | undefined => {
-    return jsonArray.filter((item) => item.nodeName === nodeName)[0]
+    return jsonArray.filter(item => item.nodeName === nodeName)[0]
   }
 
   /**
@@ -44,7 +44,7 @@ export function useMessageParser(options: MessageParserOptions) {
     }
 
     // 深度研究模式，需要设置 threadId 并且打开 report 面板
-    const coordinatorNode = jsonArray.filter((item) => item.nodeName === 'coordinator')[0]
+    const coordinatorNode = jsonArray.filter(item => item.nodeName === 'coordinator')[0]
     if (coordinatorNode && coordinatorNode.content) {
       current.threadId = coordinatorNode.graphId.thread_id
       current.deepResearchDetail = true
@@ -55,9 +55,11 @@ export function useMessageParser(options: MessageParserOptions) {
       return { type: 'pending', data: jsonArray }
     }
 
-    // 如果已经有数据，则渲染思维链 
+    // 如果已经有数据，则渲染思维链
     // TODO 性能问题
-    const backgroundInvestigatorNode = report.filter((item: any) => item.nodeName === 'background_investigator')[0]
+    const backgroundInvestigatorNode = report.filter(
+      (item: any) => item.nodeName === 'background_investigator'
+    )[0]
     if (backgroundInvestigatorNode) {
       return { type: 'onDS', data: [backgroundInvestigatorNode] }
     }

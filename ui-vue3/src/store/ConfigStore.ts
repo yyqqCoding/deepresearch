@@ -26,7 +26,7 @@ type ConfigType = {
     max_plan_iterations: number
     max_step_num: number
     mcp_settings: any
-    search_engine: 'tavily',
+    search_engine: 'tavily'
   }
 }
 export const useConfigStore = () =>

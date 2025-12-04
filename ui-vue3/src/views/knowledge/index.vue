@@ -20,7 +20,7 @@
       <h2>{{ $t('knowledge_base') }}</h2>
       <p>正在努力实现中</p>
     </div>
-    
+
     <div class="knowledge-content">
       <a-row :gutter="24">
         <a-col :span="8">
@@ -30,7 +30,7 @@
             <a-button type="primary" block @click="goManagement">进入管理</a-button>
           </a-card>
         </a-col>
-        
+
         <a-col :span="8">
           <a-card :title="$t('document_upload')" class="feature-card">
             <UploadOutlined class="feature-icon" />
@@ -38,7 +38,7 @@
             <a-button type="primary" block disabled>上传文档</a-button>
           </a-card>
         </a-col>
-        
+
         <a-col :span="8">
           <a-card :title="$t('knowledge_search')" class="feature-card">
             <SearchOutlined class="feature-icon" />
@@ -47,19 +47,13 @@
           </a-card>
         </a-col>
       </a-row>
-      
+
       <div class="recent-documents">
         <h3>最近文档</h3>
-        <a-list
-          :data-source="recentDocuments"
-          item-layout="horizontal"
-        >
+        <a-list :data-source="recentDocuments" item-layout="horizontal">
           <template #renderItem="{ item }">
             <a-list-item>
-              <a-list-item-meta
-                :title="item.title"
-                :description="item.description"
-              >
+              <a-list-item-meta :title="item.title" :description="item.description">
                 <template #avatar>
                   <FileTextOutlined />
                 </template>
@@ -79,11 +73,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import {
-  FileTextOutlined,
-  UploadOutlined,
-  SearchOutlined,
-} from '@ant-design/icons-vue'
+import { FileTextOutlined, UploadOutlined, SearchOutlined } from '@ant-design/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -117,12 +107,12 @@ const recentDocuments = ref([
 .knowledge-header {
   margin-bottom: 32px;
   text-align: center;
-  
+
   h2 {
     margin-bottom: 8px;
     color: #1890ff;
   }
-  
+
   p {
     color: #666;
     font-size: 16px;
@@ -133,23 +123,23 @@ const recentDocuments = ref([
   .feature-card {
     text-align: center;
     height: 200px;
-    
+
     .feature-icon {
       font-size: 48px;
       color: #1890ff;
       margin-bottom: 16px;
       display: block;
     }
-    
+
     p {
       margin-bottom: 24px;
       color: #666;
     }
   }
-  
+
   .recent-documents {
     margin-top: 48px;
-    
+
     h3 {
       margin-bottom: 16px;
       color: #333;

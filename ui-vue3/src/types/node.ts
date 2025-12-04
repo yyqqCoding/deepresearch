@@ -25,9 +25,9 @@ export interface NormalNode {
   /** 节点名称 */
   nodeName: string
   /** 节点内容 */
-  content: string | any ,
+  content: string | any
   graphId: GraphId
-  displayTitle: string,
+  displayTitle: string
   siteInformation: SiteInformation[]
 }
 
@@ -40,8 +40,8 @@ export interface SiteInformation {
 }
 
 export interface LlmStreamNode {
-  visible: boolean,
-  step_title: string,
+  visible: boolean
+  step_title: string
   finishReason: string
   graphId: GraphId
 }

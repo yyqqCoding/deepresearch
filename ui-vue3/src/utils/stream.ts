@@ -40,8 +40,10 @@ export class XStreamBody {
     }
     // 如果URL不是完整的HTTP URL，则添加BASE_URL前缀
     const baseURL = import.meta.env.VITE_BASE_URL || ''
-    const fullUrl = url.startsWith('http') ? url : `${baseURL}${url.startsWith('/') ? url : '/' + url}`
-    
+    const fullUrl = url.startsWith('http')
+      ? url
+      : `${baseURL}${url.startsWith('/') ? url : '/' + url}`
+
     this.requestInfo = {
       url: fullUrl,
       config,
@@ -50,7 +52,7 @@ export class XStreamBody {
 
   content() {
     const all = this.lines.value.map(line => line.data).join('')
-    return all;
+    return all
   }
 
   async readStream(updateHandle?: any) {
@@ -59,7 +61,7 @@ export class XStreamBody {
     if (response.status !== 200) {
       return Promise.reject(response)
     }
-    
+
     // Read the stream
     for await (const chunk of XStream({
       readableStream: response.body as ReadableStream,
@@ -73,11 +75,11 @@ export class XStreamBody {
       if (updateHandle) {
         // 解析后端返回的数据，提取content字段
         try {
-          const parsedData = JSON.parse(chunk.data);
-          updateHandle(parsedData.content || parsedData);
+          const parsedData = JSON.parse(chunk.data)
+          updateHandle(parsedData.content || parsedData)
         } catch (e) {
           // 如果不是JSON格式，直接传递原始数据
-          updateHandle(chunk.data);
+          updateHandle(chunk.data)
         }
       }
     }

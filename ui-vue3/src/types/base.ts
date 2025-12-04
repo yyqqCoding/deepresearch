@@ -4,13 +4,13 @@
  */
 export interface ApiResponse<T = any> {
   /** 响应状态码 */
-  code: number;
+  code: number
   /** 响应状态 */
-  status: string;
+  status: string
   /** 响应消息 */
-  message: string;
+  message: string
   /** 响应数据 */
-  data: T;
+  data: T
 }
 
 /**
@@ -23,8 +23,8 @@ export function createSuccessResponse<T>(data: T): ApiResponse<T> {
     code: 200,
     status: 'success',
     message: '',
-    data
-  };
+    data,
+  }
 }
 
 /**
@@ -33,13 +33,16 @@ export function createSuccessResponse<T>(data: T): ApiResponse<T> {
  * @param data 可选的错误数据
  * @returns 错误的 API 响应
  */
-export function createErrorResponse<T = null>(message: string, data: T = null as T): ApiResponse<T> {
+export function createErrorResponse<T = null>(
+  message: string,
+  data: T = null as T
+): ApiResponse<T> {
   return {
     code: 500,
     status: 'error',
     message,
-    data
-  };
+    data,
+  }
 }
 
 /**
@@ -48,7 +51,7 @@ export function createErrorResponse<T = null>(message: string, data: T = null as
  * @returns 是否为成功响应
  */
 export function isSuccessResponse<T>(response: ApiResponse<T>): boolean {
-  return response.code === 200 && response.status === 'success';
+  return response.code === 200 && response.status === 'success'
 }
 
 /**
@@ -57,5 +60,5 @@ export function isSuccessResponse<T>(response: ApiResponse<T>): boolean {
  * @returns 是否为错误响应
  */
 export function isErrorResponse<T>(response: ApiResponse<T>): boolean {
-  return response.code !== 200 || response.status === 'error';
+  return response.code !== 200 || response.status === 'error'
 }

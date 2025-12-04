@@ -83,7 +83,10 @@ class ConfigService {
   /**
    * 测试API连接
    */
-  async testApiConnection(keyType: string, apiKey: string): Promise<{ success: boolean; message: string }> {
+  async testApiConnection(
+    keyType: string,
+    apiKey: string
+  ): Promise<{ success: boolean; message: string }> {
     return service.post('/api/config/keys/test', { key_type: keyType, api_key: apiKey })
   }
 }

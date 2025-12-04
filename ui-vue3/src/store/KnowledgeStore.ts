@@ -45,10 +45,10 @@ export const useKnowledgeStore = () =>
       })
     },
     getters: {
-      getKnowledgeBaseById: (state) => (id: string) => {
+      getKnowledgeBaseById: state => (id: string) => {
         return state.knowledgeBases.find(kb => kb.kb_id === id)
       },
-      getKnowledgeBasesByCategory: (state) => (category: string) => {
+      getKnowledgeBasesByCategory: state => (category: string) => {
         return state.knowledgeBases.filter(kb => kb.category === category)
       },
     },
@@ -64,8 +64,11 @@ export const useKnowledgeStore = () =>
         this.knowledgeBases.push(newKb)
         return newKb
       },
-      
-      updateKnowledgeBase(id: string, updates: Partial<Omit<KnowledgeBase, 'kb_id' | 'createTime'>>) {
+
+      updateKnowledgeBase(
+        id: string,
+        updates: Partial<Omit<KnowledgeBase, 'kb_id' | 'createTime'>>
+      ) {
         const index = this.knowledgeBases.findIndex(kb => kb.kb_id === id)
         if (index !== -1) {
           this.knowledgeBases[index] = {
@@ -77,7 +80,7 @@ export const useKnowledgeStore = () =>
         }
         return null
       },
-      
+
       deleteKnowledgeBase(id: string) {
         const index = this.knowledgeBases.findIndex(kb => kb.kb_id === id)
         if (index !== -1) {
@@ -86,7 +89,7 @@ export const useKnowledgeStore = () =>
         }
         return false
       },
-      
+
       addFileToKnowledgeBase(kbId: string, file: Omit<KnowledgeFile, 'id' | 'status'>) {
         const kb = this.getKnowledgeBaseById(kbId)
         if (kb) {
@@ -102,7 +105,7 @@ export const useKnowledgeStore = () =>
         }
         return null
       },
-      
+
       updateFileStatus(kbId: string, fileId: string, status: KnowledgeFile['status']) {
         const kb = this.getKnowledgeBaseById(kbId)
         if (kb) {
@@ -115,7 +118,7 @@ export const useKnowledgeStore = () =>
         }
         return null
       },
-      
+
       removeFileFromKnowledgeBase(kbId: string, fileId: string) {
         const kb = this.getKnowledgeBaseById(kbId)
         if (kb) {
@@ -128,7 +131,7 @@ export const useKnowledgeStore = () =>
         }
         return false
       },
-      
+
       initSampleData() {
         if (this.knowledgeBases.length === 0) {
           // 添加一些示例数据
@@ -137,13 +140,13 @@ export const useKnowledgeStore = () =>
             kb_description: '包含所有产品相关的文档和规格说明',
             category: '产品管理',
           })
-          
+
           this.addKnowledgeBase({
             kb_name: '技术文档库',
             kb_description: '技术架构、API文档和开发指南',
             category: '技术开发',
           })
-          
+
           this.addKnowledgeBase({
             kb_name: '用户手册库',
             kb_description: '用户操作指南和FAQ文档',

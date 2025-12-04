@@ -128,7 +128,7 @@ class ChatService {
     formData.append('session_id', sessionId)
 
     return service.post('/api/rag/user/batch-upload', formData, {
-      timeout: 30000
+      timeout: 30000,
     })
   }
 
