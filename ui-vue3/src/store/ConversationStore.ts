@@ -24,6 +24,7 @@ import { addConvInfo } from '@/db/conversationDB'
 import { useMessageStore } from '@/store/MessageStore'
 import { toRaw } from 'vue-demi'
 import { deepToRaw } from '@/utils/proxy'
+import { message as AntMessage } from 'ant-design-vue/es/components'
 export const useConversationStore = () =>
   defineStore('conversationStore', {
     state(): { editKey: string | null; current: number; conversations: any } {
@@ -39,6 +40,11 @@ export const useConversationStore = () =>
     },
     actions: {
       async newOne(firstMessage: any | null = null) {
+        const messageStore = useMessageStore()
+        if (messageStore.current?.runFlag) {
+          AntMessage.warn('对话正在进行，无法新建对话')
+          return
+        }
         const newVar = {
           key: v4(),
           title: firstMessage || 'Unnamed conversation',
