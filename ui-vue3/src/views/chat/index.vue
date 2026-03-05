@@ -217,14 +217,15 @@ const thoughtChainBuilder = useThoughtChainBuilder({
   onOpenDeepResearch: openDeepResearch,
 })
 
-const {
-  collapsible,
-  onExpand,
-  buildPendingNodeThoughtChain,
-  buildStartDSThoughtChain,
-  buildOnDSThoughtChain,
-  buildEndDSThoughtChain,
-} = thoughtChainBuilder
+  const {
+    collapsible,
+    onExpand,
+    buildPendingNodeThoughtChain,
+    buildStartDSThoughtChain,
+    buildOnDSThoughtChain,
+    buildEndDSThoughtChain,
+    buildFailedDSThoughtChain,
+  } = thoughtChainBuilder
 
 // 使用消息解析器 composable
 const messageParser = useMessageParser({
@@ -281,7 +282,7 @@ const stopHandle = async () => {
 
 // 开始研究
 function startDeepResearch() {
-  messageStore.nextAIType()
+  current.aiType = 'onDS'
   onRequest('开始研究')
 }
 
@@ -303,6 +304,8 @@ const parseSuccessMessageRef = (msg: string) => {
       return buildStartDSThoughtChain(result.data || [])
     case 'endDS':
       return buildEndDSThoughtChain(result.data || [])
+    case 'failedDS':
+      return buildFailedDSThoughtChain(result.data || [], result.reason)
     default:
       return ''
   }

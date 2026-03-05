@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -49,12 +50,12 @@ public class ParallelExecutorNode implements NodeAction {
 		long currResearcher = 0;
 		long currCoder = 0;
 
-		Plan curPlan = StateUtil.getPlan(state);
-		for (Plan.Step step : curPlan.getSteps()) {
-			// 跳过不需要处理的步骤
-			if (StringUtils.hasText(step.getExecutionRes()) || StringUtils.hasText(step.getExecutionStatus())) {
-				continue;
-			}
+			Plan curPlan = StateUtil.getPlan(state);
+			for (Plan.Step step : curPlan.getSteps()) {
+				// 跳过已经在处理中或已完成的步骤，"pending" 视为待分配
+				if (shouldSkipStep(step)) {
+					continue;
+				}
 
 			Plan.StepType stepType = step.getStepType();
 
@@ -94,8 +95,32 @@ public class ParallelExecutorNode implements NodeAction {
 		return plan.getSteps()
 			.stream()
 			.filter(step -> step.getStepType() == Plan.StepType.RESEARCH)
-			.allMatch(step -> step.getExecutionStatus().startsWith(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX)
-					|| step.getExecutionStatus().startsWith(StateUtil.EXECUTION_STATUS_ERROR_PREFIX));
+			.allMatch(step -> {
+				String status = step.getExecutionStatus();
+				return StringUtils.hasText(status)
+						&& (status.startsWith(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX)
+								|| status.startsWith(StateUtil.EXECUTION_STATUS_ERROR_PREFIX));
+			});
+	}
+
+	private boolean shouldSkipStep(Plan.Step step) {
+		if (StringUtils.hasText(step.getExecutionRes())) {
+			return true;
+		}
+		String status = step.getExecutionStatus();
+		if (!StringUtils.hasText(status)) {
+			return false;
+		}
+		String normalizedStatus = status.trim().toLowerCase(Locale.ROOT);
+		if ("pending".equals(normalizedStatus)) {
+			return false;
+		}
+		return normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_ASSIGNED_PREFIX)
+				|| normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_PROCESSING_PREFIX)
+				|| normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX)
+				|| normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_WAITING_REFLECTING)
+				|| normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_WAITING_PROCESSING)
+				|| normalizedStatus.startsWith(StateUtil.EXECUTION_STATUS_ERROR_PREFIX);
 	}
 
 }

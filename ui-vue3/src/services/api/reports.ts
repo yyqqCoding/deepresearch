@@ -40,6 +40,12 @@ export interface ReportNode {
 }
 
 class ReportService {
+  private baseURL = import.meta.env.VITE_BASE_URL || ''
+
+  private buildDownloadUrl(threadId: string, format: 'pdf' | 'markdown'): string {
+    return `${this.baseURL}/api/reports/download/${threadId}?format=${format}`
+  }
+
   /**
    * 获取研究报告
    */
@@ -55,20 +61,32 @@ class ReportService {
   }
 
   /**
+   * 检查报告是否存在
+   */
+  async existsReport(threadId: string): Promise<boolean> {
+    return get(`/api/reports/${threadId}/exists`)
+  }
+
+  /**
    * 导出报告为PDF
    */
   async exportPDF(threadId: string): Promise<Blob> {
-    const response = await service.get(`/api/reports/${threadId}/export/pdf`, {
-      responseType: 'blob',
-    })
-    return response.data
+    const response = await fetch(this.buildDownloadUrl(threadId, 'pdf'))
+    if (!response.ok) {
+      throw new Error(`下载PDF失败: ${response.status} ${response.statusText}`)
+    }
+    return response.blob()
   }
 
   /**
    * 导出报告为Markdown
    */
   async exportMarkdown(threadId: string): Promise<string> {
-    return get(`/api/reports/${threadId}/export/markdown`)
+    const response = await fetch(this.buildDownloadUrl(threadId, 'markdown'))
+    if (!response.ok) {
+      throw new Error(`下载Markdown失败: ${response.status} ${response.statusText}`)
+    }
+    return response.text()
   }
 
   /**

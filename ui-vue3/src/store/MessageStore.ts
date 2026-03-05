@@ -77,12 +77,23 @@ export const useMessageStore = <Message extends SimpleType>() =>
         if (!report) {
           return
         }
-        const node = JSON.parse(report)
-        if (!this.report[node.graphId.thread_id]) {
-          this.report[node.graphId.thread_id] = []
-        } else {
-          this.report[node.graphId.thread_id].push(node)
+        let node: any = report
+        if (typeof report === 'string') {
+          try {
+            node = JSON.parse(report)
+          } catch (error) {
+            console.warn('解析报告节点失败:', report, error)
+            return
+          }
         }
+        const threadId = node?.graphId?.thread_id
+        if (!threadId) {
+          return
+        }
+        if (!this.report[threadId]) {
+          this.report[threadId] = []
+        }
+        this.report[threadId].push(node)
       },
       isEnd(threadId: string): boolean {
         const report = this.report[threadId]

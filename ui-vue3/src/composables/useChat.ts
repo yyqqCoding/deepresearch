@@ -136,9 +136,13 @@ export function useChat(options: ChatOptions): ChatReturn {
           }
 
           case 'onDS': {
-            content = await (configStore.chatConfig.auto_accepted_plan
-              ? sendChatStream(message, onUpdate, onError)
-              : sendResumeStream(message, onUpdate, onError))
+            const isStartResearchAction = message?.trim() === '开始研究'
+            const shouldResumeFromThread = isStartResearchAction && Boolean(current.threadId)
+            content = await (shouldResumeFromThread
+              ? sendResumeStream(message, onUpdate, onError)
+              : configStore.chatConfig.auto_accepted_plan
+                ? sendChatStream(message, onUpdate, onError)
+                : sendResumeStream(message, onUpdate, onError))
             break
           }
 

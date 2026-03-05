@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { Flex, Button, Modal } from 'ant-design-vue'
+import { Flex, Button, message } from 'ant-design-vue'
 import {
   CloseOutlined,
   LoadingOutlined,
@@ -73,7 +73,6 @@ import {
   GlobalOutlined,
   DownloadOutlined,
 } from '@ant-design/icons-vue'
-import { parseJsonTextStrict } from '@/utils/jsonParser'
 import { useMessageStore } from '@/store/MessageStore'
 import { computed, h, watch, onUnmounted, onMounted, ref } from 'vue'
 import { ThoughtChain, type ThoughtChainProps, type ThoughtChainItem } from 'ant-design-x-vue'
@@ -115,6 +114,7 @@ const htmlRendererRef = ref(null)
 const endFlag = ref(false)
 const endContent = ref('')
 const sources = ref([])
+const hasReportContent = computed(() => Boolean(endContent.value && endContent.value.trim().length > 0))
 
 const arrayTemp: ThoughtChainProps['items'] = []
 // 用于缓存llm_stream节点的内容
@@ -247,6 +247,7 @@ const processJsonNode = (node: any) => {
   let title = ''
   let description = ''
   let content = null
+  let status: ThoughtChainItem['status'] = 'success'
 
   // 根据不同节点类型处理
   switch (node.nodeName) {
@@ -304,16 +305,22 @@ const processJsonNode = (node: any) => {
       if (node.content) {
         content = h(MD, { content: node.content })
         endContent.value = node.content
+        endFlag.value = true
       }
       break
 
     case '__END__':
       title = node.displayTitle
-      description = '研究完成'
-      endFlag.value = true
-      if (node.content) {
-        content = h(MD, { content: node.content.final_report })
-        endContent.value = node.content.final_report
+      const finalReport = node.content?.final_report
+      const endReason = node.content?.reason
+      if (finalReport) {
+        description = '研究完成'
+        content = h(MD, { content: finalReport })
+        endContent.value = finalReport
+        endFlag.value = true
+      } else if (endReason) {
+        description = `研究结束：${endReason}`
+        status = 'error'
       }
       messageStore.currentState.runFlag = false
       addConvInfo(props.convId, deepToRaw(messageStore))
@@ -326,8 +333,8 @@ const processJsonNode = (node: any) => {
   const item: ThoughtChainItem = {
     title,
     description,
-    icon: h(CheckCircleOutlined),
-    status: 'success',
+    icon: status === 'error' ? h(CloseOutlined) : h(CheckCircleOutlined),
+    status,
   }
 
   if (content) {
@@ -362,12 +369,21 @@ const handleClose = () => {
 
 // 展示HTML报告
 const handleOnlineReport = async () => {
+  if (!props.threadId) {
+    message.warning('当前线程不存在，无法生成在线报告')
+    return
+  }
+  const reportExists = await reportService.existsReport(props.threadId).catch(() => false)
+  if (!reportExists) {
+    message.warning('报告尚未落库，当前无法生成在线报告')
+    return
+  }
   // 先打开弹窗
   htmlModalVisible.value = true
   htmlLoading.value = true
   htmlChunks.value = []
 
-  if (messageStore.htmlReport) {
+  if (messageStore.htmlReport && messageStore.htmlReport.length > 0) {
     htmlChunks.value = messageStore.htmlReport
     htmlLoading.value = false
     return
@@ -398,6 +414,7 @@ const handleOnlineReport = async () => {
     htmlChunks.value = [
       `<div style="color: red; padding: 20px;">加载HTML报告时出错: ${e.statusText || '未知错误'}</div>`,
     ]
+    message.error('加载在线报告失败')
   }
 }
 
@@ -408,21 +425,39 @@ const closeHtmlModal = () => {
   htmlLoading.value = false
 }
 
+const triggerDownload = (blob: Blob, filename: string) => {
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
 const handleDownloadReport = async () => {
   try {
+    if (!props.threadId) {
+      message.warning('当前线程不存在，无法下载报告')
+      return
+    }
+    const reportExists = await reportService.existsReport(props.threadId).catch(() => false)
+    if (!reportExists) {
+      if (hasReportContent.value) {
+        const blob = new Blob([endContent.value], { type: 'text/markdown;charset=utf-8' })
+        triggerDownload(blob, `report-${props.threadId}.md`)
+        message.warning('报告未持久化，已降级下载当前Markdown内容')
+        return
+      }
+      message.warning('报告尚未生成完成，暂时无法下载')
+      return
+    }
     const blob = await reportService.exportPDF(props.threadId)
-    // 创建下载链接
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `report-${props.threadId}.pdf`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
+    triggerDownload(blob, `report-${props.threadId}.pdf`)
   } catch (error: any) {
     console.error('下载报告失败:', error)
-    // 可以显示错误提示
+    message.error('下载报告失败')
   }
 }
 </script>

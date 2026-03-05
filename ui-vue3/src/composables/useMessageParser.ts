@@ -83,7 +83,7 @@ export function useMessageParser(options: MessageParserOptions) {
 
     // 用户终止
     const endNode = findNode(jsonArray, '__END__')
-    if (endNode && endNode.content.reason === '用户终止') {
+    if (endNode && endNode.content?.reason === '用户终止') {
       current.deepResearchDetail = false
       return { type: 'termination', content: endNode.content.reason }
     }
@@ -91,6 +91,12 @@ export function useMessageParser(options: MessageParserOptions) {
     // 需要用户反馈
     if (!endNode) {
       return { type: 'startDS', data: jsonArray }
+    }
+
+    const reporterNode = findNode(jsonArray, 'reporter')
+    const hasFinalReport = Boolean(endNode?.content?.final_report || reporterNode?.content)
+    if (endNode.content?.reason && !hasFinalReport) {
+      return { type: 'failedDS', data: jsonArray, reason: endNode.content.reason }
     }
 
     // 人类恢复模式或者直接 end 模式

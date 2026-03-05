@@ -22,6 +22,7 @@ import {
   BgColorsOutlined,
   DotChartOutlined,
   LoadingOutlined,
+  CloseCircleOutlined,
 } from '@ant-design/icons-vue'
 import { ThoughtChain, type ThoughtChainProps, type ThoughtChainItem } from 'ant-design-x-vue'
 import type { VNode } from 'vue'
@@ -280,6 +281,84 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
     ])
   }
 
+  /**
+   * 构建异常结束的思考链
+   */
+  const buildFailedDSThoughtChain = (jsonArray: any[], reason?: string): VNode | undefined => {
+    const items: ThoughtChainProps['items'] = []
+
+    const backgroundInvestigatorNode = jsonArray.filter(
+      item => item.nodeName === 'background_investigator'
+    )[0]
+    if (backgroundInvestigatorNode && backgroundInvestigatorNode.siteInformation) {
+      const results: SiteInformation[] = backgroundInvestigatorNode.siteInformation[0]
+      const markdownContent = results
+        .map((result: any, index: number) => {
+          return `${index + 1}. [${result.title}](${result.url})\n\n`
+        })
+        .join('\n')
+
+      items.push({
+        status: 'error',
+        title: '研究网站',
+        icon: h(IeOutlined),
+        key: 'backgroundInvestigator',
+        extra: '',
+        content: h(MD, { content: markdownContent }),
+      })
+    }
+
+    const startNode = jsonArray.filter(item => item.nodeName === '__START__')[0]
+    const humanFeedbackNode = jsonArray.filter(item => item.nodeName === 'human_feedback')[0]
+    if (startNode || humanFeedbackNode) {
+      const threadId = startNode ? startNode.graphId.thread_id : humanFeedbackNode.graphId.thread_id
+      items.push({
+        status: 'error',
+        title: '分析结果',
+        icon: h(CloseCircleOutlined),
+        footer: h(
+          Flex,
+          { style: { marginLeft: 'auto' }, gap: 'middle' },
+          {
+            default: () => [
+              h(
+                Button,
+                {
+                  type: 'primary',
+                  onClick: () => onOpenDeepResearch?.(threadId),
+                },
+                () =>
+                  current.deepResearchDetail && current.threadId === threadId ? '关闭详情' : '查看详情'
+              ),
+            ],
+          }
+        ),
+      })
+    }
+
+    items.push({
+      title: '完成',
+      icon: h(CloseCircleOutlined),
+      status: 'error',
+      description: reason ? `流程异常结束：${reason}` : '流程异常结束',
+    })
+
+    return h('div', {}, [
+      h('p', {}, '研究流程异常结束，本次不保证可下载报告。'),
+      h(
+        Card,
+        { style: { width: '500px', backgroundColor: '#EEF2F8' } },
+        {
+          default: () =>
+            h(ThoughtChain, {
+              items,
+              collapsible: { expandedKeys: collapsible.value, onExpand },
+            }),
+        }
+      ),
+    ])
+  }
+
   return {
     collapsible,
     onExpand,
@@ -287,5 +366,6 @@ export function useThoughtChainBuilder(options: ThoughtChainBuilderOptions) {
     buildStartDSThoughtChain,
     buildOnDSThoughtChain,
     buildEndDSThoughtChain,
+    buildFailedDSThoughtChain,
   }
 }
