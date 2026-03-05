@@ -339,16 +339,6 @@ const parseMessageRef = (status: MessageStatus, msg: string): any => {
 
 // 消息列表
 const bubbleList = computed(() => {
-  let isError = false
-  for (const item of messages.value) {
-    if (item.status === 'error') {
-      isError = true
-    }
-  }
-  // 避免异常，导致整个消息列表被覆盖
-  if (isError) {
-    return []
-  }
   messageStore.history = messages.value
   return messages.value.map(({ id, status, message }, idx) => {
     return {

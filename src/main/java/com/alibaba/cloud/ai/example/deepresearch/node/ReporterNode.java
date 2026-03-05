@@ -22,6 +22,7 @@ import com.alibaba.cloud.ai.example.deepresearch.model.enums.ParallelEnum;
 import com.alibaba.cloud.ai.example.deepresearch.model.SessionHistory;
 import com.alibaba.cloud.ai.example.deepresearch.model.dto.Plan;
 import com.alibaba.cloud.ai.example.deepresearch.model.req.GraphId;
+import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.ReportService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
 import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
@@ -69,16 +70,19 @@ public class ReporterNode implements NodeAction {
 
 	private final ShortTermMemoryProperties shortTermMemoryProperties;
 
+	private final LongTermMemoryService longTermMemoryService;
+
 	private static final String RESEARCH_FORMAT = "# Research Requirements\n\n## Task\n\n{0}\n\n## Description\n\n{1}";
 
 	public ReporterNode(ChatClient reporterAgent, ReportService reportService,
 			SessionContextService sessionContextService, MessageWindowChatMemory messageWindowChatMemory,
-			ShortTermMemoryProperties shortTermMemoryProperties) {
+			ShortTermMemoryProperties shortTermMemoryProperties, LongTermMemoryService longTermMemoryService) {
 		this.reporterAgent = reporterAgent;
 		this.reportService = reportService;
 		this.sessionContextService = sessionContextService;
 		this.messageWindowChatMemory = messageWindowChatMemory;
 		this.shortTermMemoryProperties = shortTermMemoryProperties;
+		this.longTermMemoryService = longTermMemoryService;
 	}
 
 	@Override
@@ -151,6 +155,12 @@ public class ReporterNode implements NodeAction {
 					sessionContextService.addSessionHistory(graphId,
 							SessionHistory.builder().graphId(graphId).userQuery(userQuery).report(finalReport).build());
 					logger.info("Report saved successfully, Thread ID: {}", threadId);
+
+					// Flush to long-term memory (async, non-blocking)
+					if (longTermMemoryService != null) {
+						logger.info("Triggering long-term memory flush for Thread ID: {}", threadId);
+						longTermMemoryService.flushMemory(userQuery, finalReport);
+					}
 				}
 				catch (Exception e) {
 					logger.error("Failed to save report, Thread ID: {}", threadId, e);

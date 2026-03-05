@@ -24,6 +24,7 @@ import com.alibaba.cloud.ai.example.deepresearch.model.enums.ParallelEnum;
 import com.alibaba.cloud.ai.example.deepresearch.node.*;
 import com.alibaba.cloud.ai.example.deepresearch.service.RagNodeService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
+import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.QuestionClassifierService;
 import com.alibaba.cloud.ai.example.deepresearch.service.ReportService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SearchPlatformSelectionService;
@@ -68,7 +69,7 @@ import com.alibaba.cloud.ai.example.deepresearch.service.McpProviderFactory;
 @Configuration
 @EnableConfigurationProperties({ DeepResearchProperties.class, PythonCoderProperties.class,
 		McpAssignNodeProperties.class, RagProperties.class, ReflectionProperties.class, SmartAgentProperties.class,
-		ShortTermMemoryProperties.class })
+		ShortTermMemoryProperties.class, LongTermMemoryProperties.class })
 public class DeepResearchConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(DeepResearchConfiguration.class);
@@ -155,6 +156,9 @@ public class DeepResearchConfiguration {
 	@Autowired
 	private RagNodeService ragNodeService;
 
+	@Autowired(required = false)
+	private LongTermMemoryService longTermMemoryService;
+
 	@Bean
 	public ReflectionProcessor reflectionProcessor() {
 		if (!reflectionProperties.isEnabled()) {
@@ -226,7 +230,7 @@ public class DeepResearchConfiguration {
 							shortTermMemoryRepository)))
 			.addNode("coordinator",
 					node_async(new CoordinatorNode(coordinatorAgent, sessionContextService, messageWindowChatMemory,
-							shortTermMemoryProperties)))
+							shortTermMemoryProperties, longTermMemoryService)))
 			.addNode("rewrite_multi_query",
 					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder,
 							shortTermMemoryRepository, shortTermMemoryProperties)))
@@ -244,7 +248,7 @@ public class DeepResearchConfiguration {
 			.addNode("research_team", node_async(new ResearchTeamNode()))
 			.addNode("parallel_executor", node_async(new ParallelExecutorNode(deepResearchProperties)))
 			.addNode("reporter", node_async(new ReporterNode(reporterAgent, reportService, sessionContextService,
-					messageWindowChatMemory, shortTermMemoryProperties)));
+					messageWindowChatMemory, shortTermMemoryProperties, longTermMemoryService)));
 
 		// 添加并行节点块
 		configureParallelNodes(stateGraph);

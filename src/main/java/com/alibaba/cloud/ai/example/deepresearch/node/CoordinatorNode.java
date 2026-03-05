@@ -17,6 +17,7 @@
 package com.alibaba.cloud.ai.example.deepresearch.node;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.ShortTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
 import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.TemplateUtil;
@@ -56,12 +57,16 @@ public class CoordinatorNode implements NodeAction {
 
 	private final ShortTermMemoryProperties shortTermMemoryProperties;
 
+	private final LongTermMemoryService longTermMemoryService;
+
 	public CoordinatorNode(ChatClient coordinatorAgent, SessionContextService sessionContextService,
-			MessageWindowChatMemory messageWindowChatMemory, ShortTermMemoryProperties shortTermMemoryProperties) {
+			MessageWindowChatMemory messageWindowChatMemory, ShortTermMemoryProperties shortTermMemoryProperties,
+			LongTermMemoryService longTermMemoryService) {
 		this.coordinatorAgent = coordinatorAgent;
 		this.sessionContextService = sessionContextService;
 		this.messageWindowChatMemory = messageWindowChatMemory;
 		this.shortTermMemoryProperties = shortTermMemoryProperties;
+		this.longTermMemoryService = longTermMemoryService;
 	}
 
 	@Override
@@ -69,6 +74,17 @@ public class CoordinatorNode implements NodeAction {
 		logger.info("coordinator node is running.");
 		List<Message> messages = new ArrayList<>();
 		// 1. 添加消息
+		// 1.0 注入长期记忆上下文 (MEMORY.md + 近日日志)
+		if (longTermMemoryService != null) {
+			String longTermContext = longTermMemoryService.loadSessionContext();
+			if (org.springframework.util.StringUtils.hasText(longTermContext)) {
+				messages.add(new org.springframework.ai.chat.messages.SystemMessage(
+						"The following is your long-term memory about this user and recent research sessions:\n\n"
+								+ longTermContext));
+				logger.info("Injected long-term memory context ({} chars) into coordinator prompt.",
+						longTermContext.length());
+			}
+		}
 		// 1.1 添加预置提示消息
 		TemplateUtil.addShortUserRoleMemory(messages, state);
 		messages.add(TemplateUtil.getMessage("coordinator"));

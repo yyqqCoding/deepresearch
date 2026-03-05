@@ -50,12 +50,12 @@ public class ParallelExecutorNode implements NodeAction {
 		long currResearcher = 0;
 		long currCoder = 0;
 
-			Plan curPlan = StateUtil.getPlan(state);
-			for (Plan.Step step : curPlan.getSteps()) {
-				// 跳过已经在处理中或已完成的步骤，"pending" 视为待分配
-				if (shouldSkipStep(step)) {
-					continue;
-				}
+		Plan curPlan = StateUtil.getPlan(state);
+		for (Plan.Step step : curPlan.getSteps()) {
+			// 跳过已经在处理中或已完成的步骤，"pending" 视为待分配
+			if (shouldSkipStep(step)) {
+				continue;
+			}
 
 			Plan.StepType stepType = step.getStepType();
 
@@ -92,15 +92,11 @@ public class ParallelExecutorNode implements NodeAction {
 			return true;
 		}
 
-		return plan.getSteps()
-			.stream()
-			.filter(step -> step.getStepType() == Plan.StepType.RESEARCH)
-			.allMatch(step -> {
-				String status = step.getExecutionStatus();
-				return StringUtils.hasText(status)
-						&& (status.startsWith(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX)
-								|| status.startsWith(StateUtil.EXECUTION_STATUS_ERROR_PREFIX));
-			});
+		return plan.getSteps().stream().filter(step -> step.getStepType() == Plan.StepType.RESEARCH).allMatch(step -> {
+			String status = step.getExecutionStatus();
+			return StringUtils.hasText(status) && (status.startsWith(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX)
+					|| status.startsWith(StateUtil.EXECUTION_STATUS_ERROR_PREFIX));
+		});
 	}
 
 	private boolean shouldSkipStep(Plan.Step step) {

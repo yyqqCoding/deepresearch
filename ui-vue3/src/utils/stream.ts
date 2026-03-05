@@ -73,14 +73,8 @@ export class XStreamBody {
       }
       this.lines.value = [...this.lines.value, newChunk]
       if (updateHandle) {
-        // 解析后端返回的数据，提取content字段
-        try {
-          const parsedData = JSON.parse(chunk.data)
-          updateHandle(parsedData.content || parsedData)
-        } catch (e) {
-          // 如果不是JSON格式，直接传递原始数据
-          updateHandle(chunk.data)
-        }
+        // 将原始SSE数据透传给上层，避免丢失节点元信息（nodeName/graphId等）
+        updateHandle(chunk.data)
       }
     }
   }

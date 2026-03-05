@@ -246,4 +246,10 @@ public class AgentsConfiguration {
 		return shortMemoryChatClientBuilder.build();
 	}
 
+	@Bean
+	@ConditionalOnProperty(name = "spring.ai.alibaba.deepresearch.long-term-memory.enabled", havingValue = "true")
+	public ChatClient longTermMemoryAgent(ChatClient.Builder longTermMemoryChatClientBuilder) {
+		return longTermMemoryChatClientBuilder.build();
+	}
+
 }

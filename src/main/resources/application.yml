@@ -135,6 +135,12 @@ spring:
             history-user-messages-num: 10
           # 记忆类型
           memory-type: in-memory
+        # 长期记忆配置 (OpenClaw Markdown方式)
+        long-term-memory:
+          enabled: true
+          # 保存到当前项目目录下: {user.dir}/.deepresearch/workspace/memory/
+          workspace-path: ${user.dir}/.deepresearch/workspace
+          auto-flush: true
 
 
 

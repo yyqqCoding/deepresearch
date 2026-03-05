@@ -15,6 +15,7 @@
     {"name": "lifestyleTravel","modelName": "qwen-plus"},
     {"name": "encyclopedia","modelName": "qwen-plus"},
     {"name": "dataAnalysis","modelName": "qwen-plus"},
-    {"name": "shortMemory","modelName" : "qwen-plus"}
+    {"name": "shortMemory","modelName" : "qwen-plus"},
+    {"name":"longTermMemory","modelName":"qwen-plus"}
   ]
 }

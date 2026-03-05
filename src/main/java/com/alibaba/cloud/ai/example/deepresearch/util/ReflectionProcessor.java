@@ -23,6 +23,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.util.StringUtils;
+
+import java.time.LocalDate;
 
 /**
  * Reflection utility class providing quality assessment and state management
@@ -77,13 +80,7 @@ public class ReflectionProcessor {
 	 */
 	private ReflectionHandleResult performReflection(Plan.Step step, String nodeName, String nodeType) {
 		try {
-			int attemptCount = getReflectionAttemptCount(step);
-			if (attemptCount >= maxReflectionAttempts) {
-				logger.warn("Step {} has reached maximum reflection attempts {}, forcing pass", step.getTitle(),
-						maxReflectionAttempts);
-				step.setExecutionStatus(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX + nodeName);
-				return ReflectionHandleResult.skipProcessing();
-			}
+			int previousAttemptCount = getReflectionAttemptCount(step);
 
 			boolean qualityGood = evaluateStepQuality(step, nodeType);
 
@@ -92,13 +89,19 @@ public class ReflectionProcessor {
 				logger.info("Step {} reflection passed, quality is acceptable", step.getTitle());
 				return ReflectionHandleResult.skipProcessing();
 			}
-			else {
-				incrementReflectionAttemptCount(step);
-				step.setExecutionStatus(StateUtil.EXECUTION_STATUS_WAITING_PROCESSING + nodeName);
-				logger.info("Step {} reflection failed, marked for reprocessing (attempt {})", step.getTitle(),
-						attemptCount + 1);
+
+			// max-attempts means max reprocessing count after initial completion.
+			if (previousAttemptCount >= maxReflectionAttempts) {
+				logger.warn("Step {} has exhausted reflection retries (max {}), forcing pass", step.getTitle(),
+						maxReflectionAttempts);
+				step.setExecutionStatus(StateUtil.EXECUTION_STATUS_COMPLETED_PREFIX + nodeName);
 				return ReflectionHandleResult.skipProcessing();
 			}
+
+			step.setExecutionStatus(StateUtil.EXECUTION_STATUS_WAITING_PROCESSING + nodeName);
+			logger.info("Step {} reflection failed, marked for reprocessing (attempt {})", step.getTitle(),
+					previousAttemptCount + 1);
+			return ReflectionHandleResult.skipProcessing();
 
 		}
 		catch (Exception e) {
@@ -117,8 +120,20 @@ public class ReflectionProcessor {
 		try {
 			var response = reflectionAgent.prompt(converter.getFormat()).user(evaluationPrompt).call().chatResponse();
 
-			String responseText = response.getResult().getOutput().getText().trim();
-			ReflectionResult reflectionResult = converter.convert(responseText);
+			String responseText = response != null && response.getResult() != null && response.getResult().getOutput() != null
+					? response.getResult().getOutput().getText() : "";
+			if (!StringUtils.hasText(responseText)) {
+				throw new IllegalStateException("Reflection model returned empty response");
+			}
+
+			String normalizedResponse = LlmJsonExtractor.normalizeJsonObject(responseText);
+			ReflectionResult reflectionResult = converter.convert(normalizedResponse);
+			if (reflectionResult == null) {
+				throw new IllegalStateException("Unable to parse reflection response");
+			}
+			if (!StringUtils.hasText(reflectionResult.getFeedback())) {
+				reflectionResult.setFeedback("无具体反馈");
+			}
 
 			// Add execution result to reflection record
 			reflectionResult.setExecutionResult(step.getExecutionRes());
@@ -151,7 +166,14 @@ public class ReflectionProcessor {
 		};
 
 		return String.format("""
-				Please evaluate the completion quality of the following %s:
+				Please evaluate the completion quality of the following %s.
+				Current date: %s
+
+				Evaluation constraints:
+				1. Evaluate strictly based on the task and the provided completion result.
+				2. If an external fact or URL cannot be verified from the text alone, label it as "need verification" rather than asserting it is false.
+				3. Do not fail solely on assumptions about calendar-year feasibility unless there is explicit contradiction in the result itself.
+				4. Mark as failed only when core requirements are missing, major content is fabricated from internal evidence, or conclusions are clearly inconsistent.
 
 				**Task Title:** %s
 
@@ -159,7 +181,7 @@ public class ReflectionProcessor {
 
 				**Completion Result:**
 				%s
-				""", taskTypeDescription, step.getTitle(), step.getDescription(), step.getExecutionRes());
+				""", taskTypeDescription, LocalDate.now(), step.getTitle(), step.getDescription(), step.getExecutionRes());
 	}
 
 	/**
@@ -184,15 +206,6 @@ public class ReflectionProcessor {
 			}
 		}
 		return 0;
-	}
-
-	/**
-	 * Increment reflection attempt count
-	 */
-	private void incrementReflectionAttemptCount(Plan.Step step) {
-		int currentCount = getReflectionAttemptCount(step);
-		String baseStatus = step.getExecutionStatus().split("_attempt_")[0];
-		step.setExecutionStatus(baseStatus + "_attempt_" + (currentCount + 1));
 	}
 
 	/**

@@ -23,11 +23,17 @@ import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.example.deepresearch.repository.ModelParamRepository;
 import com.alibaba.cloud.ai.example.deepresearch.repository.ModelParamRepositoryImpl;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.retry.RetryUtils;
 import org.springframework.ai.model.tool.ToolCallingManager;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.util.Assert;
+import org.springframework.web.client.ResponseErrorHandler;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.List;
 import java.util.Map;
@@ -55,13 +61,30 @@ public class AgentModelsConfiguration implements InitializingBean {
 
 	private final ToolCallingManager toolCallingManager;
 
+	private final RestClient.Builder restClientBuilder;
+
+	private final WebClient.Builder webClientBuilder;
+
+	private final RetryTemplate retryTemplate;
+
+	private final ResponseErrorHandler responseErrorHandler;
+
 	private final BiConsumer<String, DashScopeChatModel> registerConsumer;
 
 	public AgentModelsConfiguration(ModelParamRepository modelParamRepository, ConfigurableBeanFactory beanFactory,
-			DashScopeConnectionProperties dashScopeConnectionProperties, ToolCallingManager toolCallingManager) {
+			DashScopeConnectionProperties dashScopeConnectionProperties, ToolCallingManager toolCallingManager,
+			ObjectProvider<RetryTemplate> retryTemplateProvider,
+			ObjectProvider<RestClient.Builder> restClientBuilderProvider,
+			ObjectProvider<WebClient.Builder> webClientBuilderProvider,
+			ObjectProvider<ResponseErrorHandler> responseErrorHandlerProvider) {
 		this.toolCallingManager = toolCallingManager;
 		Assert.notNull(modelParamRepository, "ModelParamRepository must not be null");
 		this.commonProperties = dashScopeConnectionProperties;
+		this.retryTemplate = retryTemplateProvider.getIfAvailable(() -> RetryUtils.DEFAULT_RETRY_TEMPLATE);
+		this.restClientBuilder = restClientBuilderProvider.getIfAvailable(RestClient::builder);
+		this.webClientBuilder = webClientBuilderProvider.getIfAvailable(WebClient::builder);
+		this.responseErrorHandler = responseErrorHandlerProvider.getIfAvailable(
+				() -> RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER);
 		// load models from the repository
 		this.models = modelParamRepository.loadModels();
 		this.registerConsumer = (key, value) -> beanFactory.registerSingleton(key.concat(BEAN_NAME_SUFFIX),
@@ -80,7 +103,15 @@ public class AgentModelsConfiguration implements InitializingBean {
 			.filter(Objects::nonNull)
 			.collect(Collectors.toMap(ModelParamRepositoryImpl.AgentModel::name,
 					model -> DashScopeChatModel.builder()
-						.dashScopeApi(DashScopeApi.builder().apiKey(commonProperties.getApiKey()).build())
+						.dashScopeApi(DashScopeApi.builder()
+							.baseUrl(commonProperties.getBaseUrl())
+							.apiKey(commonProperties.getApiKey())
+							.workSpaceId(commonProperties.getWorkspaceId())
+							.restClientBuilder(restClientBuilder)
+							.webClientBuilder(webClientBuilder)
+							.responseErrorHandler(responseErrorHandler)
+							.build())
+						.retryTemplate(retryTemplate)
 						.toolCallingManager(toolCallingManager)
 						.defaultOptions(DashScopeChatOptions.builder()
 							.withModel(model.modelName())
