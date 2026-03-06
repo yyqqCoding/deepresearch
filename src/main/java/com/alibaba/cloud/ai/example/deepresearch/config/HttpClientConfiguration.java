@@ -93,7 +93,9 @@ public class HttpClientConfiguration {
 		/**
 		 * 读取超时时间（毫秒）
 		 */
-		private int readTimeoutMs = 60000;
+		// Deep research prompts can be large and some model calls legitimately exceed
+		// 60s.
+		private int readTimeoutMs = 300000;
 
 		/**
 		 * 连接请求超时时间（毫秒）

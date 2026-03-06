@@ -22,7 +22,6 @@ import com.alibaba.cloud.ai.example.deepresearch.tool.PlannerTool;
 import com.alibaba.cloud.ai.example.deepresearch.tool.PythonReplTool;
 import com.alibaba.cloud.ai.example.deepresearch.util.multiagent.AgentPromptTemplateUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.ResourceUtil;
-import com.alibaba.cloud.ai.toolcalling.jinacrawler.JinaCrawlerConstants;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.mcp.AsyncMcpToolCallbackProvider;
 import org.springframework.ai.mcp.SyncMcpToolCallbackProvider;
@@ -31,13 +30,11 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Arrays;
 import java.util.Map;
 
 @Configuration
@@ -64,21 +61,11 @@ public class AgentsConfiguration {
 	@Value("classpath:prompts/rag.md")
 	private Resource ragPrompt;
 
-	@Autowired
-	private ApplicationContext context;
-
 	@Autowired(required = false)
 	private Map<String, AsyncMcpToolCallbackProvider> agent2AsyncMcpToolCallbackProvider;
 
 	@Autowired(required = false)
 	private Map<String, SyncMcpToolCallbackProvider> agent2SyncMcpToolCallbackProvider;
-
-	/**
-	 * Return the tool name array that have corresponding beans.
-	 */
-	private String[] getAvailableTools(String... toolNames) {
-		return Arrays.stream(toolNames).filter(context::containsBean).toArray(String[]::new);
-	}
 
 	/**
 	 * 获取指定代理的MCP工具回调, 这边我把mcp创建的部分改为在结点处进行动态创建和加载，所以会返回空数组
@@ -138,10 +125,6 @@ public class AgentsConfiguration {
 		ToolCallback[] mcpCallbacks = getMcpToolCallbacks("researchAgent");
 
 		var builder = researchChatClientBuilder.defaultSystem(ResourceUtil.loadResourceAsString(researcherPrompt));
-		var toolArray = this.getAvailableTools(JinaCrawlerConstants.TOOL_NAME);
-		if (toolArray.length > 0) {
-			builder = builder.defaultToolNames(toolArray);
-		}
 		return builder.defaultToolCallbacks(mcpCallbacks).build();
 	}
 

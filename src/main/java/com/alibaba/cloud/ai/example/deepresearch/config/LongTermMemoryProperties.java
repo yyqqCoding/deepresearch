@@ -45,6 +45,11 @@ public class LongTermMemoryProperties {
 	 */
 	private boolean autoFlush = true;
 
+	/**
+	 * Memory search (vector + semantic) configuration.
+	 */
+	private MemorySearch memorySearch = new MemorySearch();
+
 	public boolean isEnabled() {
 		return enabled;
 	}
@@ -69,6 +74,14 @@ public class LongTermMemoryProperties {
 		this.autoFlush = autoFlush;
 	}
 
+	public MemorySearch getMemorySearch() {
+		return memorySearch;
+	}
+
+	public void setMemorySearch(MemorySearch memorySearch) {
+		this.memorySearch = memorySearch;
+	}
+
 	/**
 	 * Get the memory directory path: {workspacePath}/memory/
 	 */
@@ -81,6 +94,145 @@ public class LongTermMemoryProperties {
 	 */
 	public String getMemoryFilePath() {
 		return getMemoryDirectoryPath() + "/MEMORY.md";
+	}
+
+	/**
+	 * Memory search configuration.
+	 */
+	public static class MemorySearch {
+
+		/**
+		 * Whether memory search (tool-based semantic retrieval) is enabled.
+		 */
+		private boolean enabled = false;
+
+		/**
+		 * Maximum number of results returned by memory_search.
+		 */
+		private int maxResults = 5;
+
+		/**
+		 * Characters per chunk (~4 chars per token → ~400 tokens).
+		 */
+		private int chunkSize = 1600;
+
+		/**
+		 * Overlap characters between chunks (~80 tokens).
+		 */
+		private int chunkOverlap = 320;
+
+		/**
+		 * Weight for vector (semantic) score in hybrid merge. Default 0.7.
+		 */
+		private double vectorWeight = 0.7;
+
+		/**
+		 * Weight for BM25 (keyword) score in hybrid merge. Default 0.3.
+		 */
+		private double textWeight = 0.3;
+
+		/**
+		 * Half-life in days for temporal decay. Score halves every N days. Default 30.
+		 */
+		private int halfLifeDays = 30;
+
+		/**
+		 * MMR lambda for diversity vs relevance tradeoff. 0=max diversity, 1=max
+		 * relevance. Default 0.7.
+		 */
+		private double mmrLambda = 0.7;
+
+		/**
+		 * Candidate multiplier: retrieve topK * multiplier candidates before
+		 * post-processing. Default 4.
+		 */
+		private int candidateMultiplier = 4;
+
+		/**
+		 * Maximum entries in the embedding LRU cache. Default 50000.
+		 */
+		private int embeddingCacheSize = 50000;
+
+		public boolean isEnabled() {
+			return enabled;
+		}
+
+		public void setEnabled(boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		public int getMaxResults() {
+			return maxResults;
+		}
+
+		public void setMaxResults(int maxResults) {
+			this.maxResults = maxResults;
+		}
+
+		public int getChunkSize() {
+			return chunkSize;
+		}
+
+		public void setChunkSize(int chunkSize) {
+			this.chunkSize = chunkSize;
+		}
+
+		public int getChunkOverlap() {
+			return chunkOverlap;
+		}
+
+		public void setChunkOverlap(int chunkOverlap) {
+			this.chunkOverlap = chunkOverlap;
+		}
+
+		public double getVectorWeight() {
+			return vectorWeight;
+		}
+
+		public void setVectorWeight(double vectorWeight) {
+			this.vectorWeight = vectorWeight;
+		}
+
+		public double getTextWeight() {
+			return textWeight;
+		}
+
+		public void setTextWeight(double textWeight) {
+			this.textWeight = textWeight;
+		}
+
+		public int getHalfLifeDays() {
+			return halfLifeDays;
+		}
+
+		public void setHalfLifeDays(int halfLifeDays) {
+			this.halfLifeDays = halfLifeDays;
+		}
+
+		public double getMmrLambda() {
+			return mmrLambda;
+		}
+
+		public void setMmrLambda(double mmrLambda) {
+			this.mmrLambda = mmrLambda;
+		}
+
+		public int getCandidateMultiplier() {
+			return candidateMultiplier;
+		}
+
+		public void setCandidateMultiplier(int candidateMultiplier) {
+			this.candidateMultiplier = candidateMultiplier;
+		}
+
+		public int getEmbeddingCacheSize() {
+			return embeddingCacheSize;
+		}
+
+		public void setEmbeddingCacheSize(int embeddingCacheSize) {
+			this.embeddingCacheSize = embeddingCacheSize;
+		}
+
 	}
 
 }

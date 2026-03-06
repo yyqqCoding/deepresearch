@@ -40,8 +40,7 @@ class ReflectionProcessorTest {
 			.chatResponse()
 			.getResult()
 			.getOutput()
-			.getText())
-			.thenReturn("{\"passed\":false,\"feedback\":\"first fail\"}",
+			.getText()).thenReturn("{\"passed\":false,\"feedback\":\"first fail\"}",
 					"{\"passed\":false,\"feedback\":\"second fail\"}");
 
 		ReflectionProcessor processor = new ReflectionProcessor(reflectionAgent, 1);
@@ -76,8 +75,7 @@ class ReflectionProcessorTest {
 			.chatResponse()
 			.getResult()
 			.getOutput()
-			.getText())
-			.thenReturn("""
+			.getText()).thenReturn("""
 					```json
 					{"passed":true,"feedback":"ok"}
 					```

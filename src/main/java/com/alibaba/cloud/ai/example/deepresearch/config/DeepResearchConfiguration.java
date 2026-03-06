@@ -28,6 +28,8 @@ import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.QuestionClassifierService;
 import com.alibaba.cloud.ai.example.deepresearch.service.ReportService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SearchPlatformSelectionService;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemoryGetTool;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchTool;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentDispatcherService;
 
 import com.alibaba.cloud.ai.example.deepresearch.serializer.DeepResearchStateSerializer;
@@ -158,6 +160,12 @@ public class DeepResearchConfiguration {
 
 	@Autowired(required = false)
 	private LongTermMemoryService longTermMemoryService;
+
+	@Autowired(required = false)
+	private MemorySearchTool memorySearchTool;
+
+	@Autowired(required = false)
+	private MemoryGetTool memoryGetTool;
 
 	@Bean
 	public ReflectionProcessor reflectionProcessor() {
@@ -302,7 +310,7 @@ public class DeepResearchConfiguration {
 			stateGraph.addNode(nodeId,
 					node_async(new ResearcherNode(researchAgent, String.valueOf(i), reflectionProcessor,
 							mcpProviderFactory, searchFilterService, smartAgentDispatcher, smartAgentProperties,
-							jinaCrawlerService)));
+							jinaCrawlerService, memorySearchTool, memoryGetTool)));
 			stateGraph.addEdge("parallel_executor", nodeId).addEdge(nodeId, "research_team");
 		}
 	}

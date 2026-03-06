@@ -21,6 +21,7 @@ import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
 import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.TemplateUtil;
+import com.alibaba.cloud.ai.example.deepresearch.model.req.GraphId;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import org.slf4j.Logger;
@@ -129,7 +130,33 @@ public class CoordinatorNode implements NodeAction {
 			if (enabledShortTermMemory) {
 				messageWindowChatMemory.add(sessionId, output);
 			}
-			updated.put("output", assistantMessage.getText());
+			String assistantText = assistantMessage.getText();
+			updated.put("output", assistantText);
+
+			// V2.2: 通用对话记忆沉淀
+			// 如果不进入深度研究，直接在此处持久化该次简短对话的记忆（包括每日流水日志及可能的长期画像萃取）
+			try {
+				String threadId = StateUtil.getThreadId(state);
+				GraphId graphId = new GraphId(sessionId, threadId);
+				String userQuery = StateUtil.getQuery(state);
+
+				// 1. 保存到会话历史记录列表 (用于历史回溯)
+				sessionContextService.addSessionHistory(graphId,
+						com.alibaba.cloud.ai.example.deepresearch.model.SessionHistory.builder()
+							.graphId(graphId)
+							.userQuery(userQuery)
+							.report(assistantText)
+							.build());
+
+				// 2. 异步触发长期记忆萃取及日增量日志保存 (MEMORY.md & YYYY-MM-DD.md)
+				if (longTermMemoryService != null) {
+					logger.info("Triggering long-term memory flush for short conversation, Thread ID: {}", threadId);
+					longTermMemoryService.flushMemory(userQuery, assistantText);
+				}
+			}
+			catch (Exception e) {
+				logger.error("Failed to save short conversation memory, session: {}", sessionId, e);
+			}
 		}
 		updated.put("coordinator_next_node", nextStep);
 		updated.put("deep_research", deepResearch);

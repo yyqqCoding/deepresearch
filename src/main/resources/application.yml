@@ -93,6 +93,10 @@ spring:
               primary: worldbankdata
             general_research:
               primary: tavily
+        http-client:
+          connect-timeout-ms: 30000
+          read-timeout-ms: 300000
+          connection-request-timeout-ms: 30000
         mcp:
           enabled: false
           config-location: classpath:mcp-config.json
@@ -141,6 +145,18 @@ spring:
           # 保存到当前项目目录下: {user.dir}/.deepresearch/workspace/memory/
           workspace-path: ${user.dir}/.deepresearch/workspace
           auto-flush: true
+          # 记忆语义检索配置 (v2 hybrid search)
+          memory-search:
+            enabled: true
+            max-results: 5
+            # chunk-size: 1600
+            # chunk-overlap: 320
+            # vector-weight: 0.7
+            # text-weight: 0.3
+            # half-life-days: 30
+            # mmr-lambda: 0.7
+            # candidate-multiplier: 4
+            # embedding-cache-size: 50000
 
 
 

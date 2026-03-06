@@ -1,21 +1,21 @@
 {
   "models": [
-    {"name": "research","modelName": "qwen-plus"},
-    {"name": "background","modelName": "qwen-plus"},
-    {"name": "rewriteAndMultiQuery","modelName": "qwen-plus"},
-    {"name": "coder","modelName": "qwen-plus"},
-    {"name": "coordinator","modelName": "qwen-plus"},
-    {"name": "planner","modelName": "qwen-plus"},
-    {"name": "reporter","modelName": "qwen-plus"},
-    {"name": "interaction","modelName": "qwen-plus"},
-    {"name": "infoCheck","modelName": "qwen-plus"},
-    {"name": "reflection","modelName": "qwen-plus"},
-    {"name": "rag","modelName": "qwen-plus"},
-    {"name": "academicResearch","modelName": "qwen-plus"},
-    {"name": "lifestyleTravel","modelName": "qwen-plus"},
-    {"name": "encyclopedia","modelName": "qwen-plus"},
-    {"name": "dataAnalysis","modelName": "qwen-plus"},
-    {"name": "shortMemory","modelName" : "qwen-plus"},
-    {"name":"longTermMemory","modelName":"qwen-plus"}
+    {"name": "research","modelName": "qwen-flash"},
+    {"name": "background","modelName": "qwen-flash"},
+    {"name": "rewriteAndMultiQuery","modelName": "qwen-flash"},
+    {"name": "coder","modelName": "qwen-flash"},
+    {"name": "coordinator","modelName": "qwen-flash"},
+    {"name": "planner","modelName": "qwen-flash"},
+    {"name": "reporter","modelName": "qwen-flash"},
+    {"name": "interaction","modelName": "qwen-flash"},
+    {"name": "infoCheck","modelName": "qwen-flash"},
+    {"name": "reflection","modelName": "qwen-flash"},
+    {"name": "rag","modelName": "qwen-flash"},
+    {"name": "academicResearch","modelName": "qwen-flash"},
+    {"name": "lifestyleTravel","modelName": "qwen-flash"},
+    {"name": "encyclopedia","modelName": "qwen-flash"},
+    {"name": "dataAnalysis","modelName": "qwen-flash"},
+    {"name": "shortMemory","modelName" : "qwen-flash"},
+    {"name":"longTermMemory","modelName":"qwen-flash"}
   ]
 }

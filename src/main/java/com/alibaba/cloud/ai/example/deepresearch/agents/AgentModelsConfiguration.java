@@ -83,8 +83,8 @@ public class AgentModelsConfiguration implements InitializingBean {
 		this.retryTemplate = retryTemplateProvider.getIfAvailable(() -> RetryUtils.DEFAULT_RETRY_TEMPLATE);
 		this.restClientBuilder = restClientBuilderProvider.getIfAvailable(RestClient::builder);
 		this.webClientBuilder = webClientBuilderProvider.getIfAvailable(WebClient::builder);
-		this.responseErrorHandler = responseErrorHandlerProvider.getIfAvailable(
-				() -> RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER);
+		this.responseErrorHandler = responseErrorHandlerProvider
+			.getIfAvailable(() -> RetryUtils.DEFAULT_RESPONSE_ERROR_HANDLER);
 		// load models from the repository
 		this.models = modelParamRepository.loadModels();
 		this.registerConsumer = (key, value) -> beanFactory.registerSingleton(key.concat(BEAN_NAME_SUFFIX),
@@ -116,6 +116,7 @@ public class AgentModelsConfiguration implements InitializingBean {
 						.defaultOptions(DashScopeChatOptions.builder()
 							.withModel(model.modelName())
 							.withTemperature(DashScopeChatModel.DEFAULT_TEMPERATURE)
+							.withParallelToolCalls(false)
 							.build())
 						.build(),
 					(existing, replacement) -> existing) // On duplicate key, keep the)

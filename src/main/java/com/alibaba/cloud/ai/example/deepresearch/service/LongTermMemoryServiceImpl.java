@@ -61,12 +61,19 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 
 	private final ChatClient longTermMemoryAgent;
 
+	private MemoryIndexService memoryIndexService;
+
 	public LongTermMemoryServiceImpl(MarkdownMemoryFileManager fileManager, LongTermMemoryProperties properties,
 			ChatClient longTermMemoryAgent) {
 		this.fileManager = fileManager;
 		this.properties = properties;
 		this.longTermMemoryAgent = longTermMemoryAgent;
 		logger.info("Long-term memory service initialized. Workspace: {}", properties.getWorkspacePath());
+	}
+
+	@org.springframework.beans.factory.annotation.Autowired(required = false)
+	public void setMemoryIndexService(MemoryIndexService memoryIndexService) {
+		this.memoryIndexService = memoryIndexService;
 	}
 
 	@Override
@@ -77,7 +84,7 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 
 		StringBuilder contextBuilder = new StringBuilder();
 
-		// 1. Load MEMORY.md (curated long-term knowledge)
+		// 1. Always load MEMORY.md (curated long-term knowledge)
 		String memoryContent = fileManager.readMemoryFile();
 		if (StringUtils.hasText(memoryContent)) {
 			contextBuilder.append("# Long-Term Memory (User Preferences & Facts)\n\n");
@@ -85,24 +92,27 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 			contextBuilder.append("\n\n");
 		}
 
-		// 2. Load today's daily log
-		String todayLog = fileManager.readTodayLog();
-		if (StringUtils.hasText(todayLog)) {
-			contextBuilder.append("# Today's Research Log (")
-				.append(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
-				.append(")\n\n");
-			contextBuilder.append(todayLog);
-			contextBuilder.append("\n\n");
-		}
+		// 2. Only inject daily logs when memory-search is NOT enabled
+		// (when search IS enabled, daily logs are available via memory_search tool)
+		if (!properties.getMemorySearch().isEnabled()) {
+			// Fallback to v1 behavior: inject today + yesterday full content
+			String todayLog = fileManager.readTodayLog();
+			if (StringUtils.hasText(todayLog)) {
+				contextBuilder.append("# Today's Research Log (")
+					.append(LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE))
+					.append(")\n\n");
+				contextBuilder.append(todayLog);
+				contextBuilder.append("\n\n");
+			}
 
-		// 3. Load yesterday's daily log
-		String yesterdayLog = fileManager.readYesterdayLog();
-		if (StringUtils.hasText(yesterdayLog)) {
-			contextBuilder.append("# Yesterday's Research Log (")
-				.append(LocalDate.now().minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE))
-				.append(")\n\n");
-			contextBuilder.append(yesterdayLog);
-			contextBuilder.append("\n\n");
+			String yesterdayLog = fileManager.readYesterdayLog();
+			if (StringUtils.hasText(yesterdayLog)) {
+				contextBuilder.append("# Yesterday's Research Log (")
+					.append(LocalDate.now().minusDays(1).format(DateTimeFormatter.ISO_LOCAL_DATE))
+					.append(")\n\n");
+				contextBuilder.append(yesterdayLog);
+				contextBuilder.append("\n\n");
+			}
 		}
 
 		String context = contextBuilder.toString().trim();
@@ -166,6 +176,19 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 
 			// 5. Parse the LLM output and write to files
 			parseAndWriteMemory(llmOutput, existingMemory);
+
+			// 6. Trigger incremental indexing if memory search is enabled
+			if (memoryIndexService != null) {
+				try {
+					memoryIndexService.indexFile(java.nio.file.Paths.get(properties.getMemoryFilePath()));
+					memoryIndexService.indexFile(java.nio.file.Paths.get(properties.getMemoryDirectoryPath(),
+							LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".md"));
+					logger.info("Incremental memory indexing triggered after flush.");
+				}
+				catch (Exception ie) {
+					logger.error("Failed to trigger incremental memory indexing", ie);
+				}
+			}
 
 			logger.info("Long-term memory flush completed successfully.");
 		}

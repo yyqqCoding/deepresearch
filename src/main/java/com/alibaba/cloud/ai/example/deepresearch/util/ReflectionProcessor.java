@@ -120,8 +120,8 @@ public class ReflectionProcessor {
 		try {
 			var response = reflectionAgent.prompt(converter.getFormat()).user(evaluationPrompt).call().chatResponse();
 
-			String responseText = response != null && response.getResult() != null && response.getResult().getOutput() != null
-					? response.getResult().getOutput().getText() : "";
+			String responseText = response != null && response.getResult() != null
+					&& response.getResult().getOutput() != null ? response.getResult().getOutput().getText() : "";
 			if (!StringUtils.hasText(responseText)) {
 				throw new IllegalStateException("Reflection model returned empty response");
 			}
@@ -165,23 +165,25 @@ public class ReflectionProcessor {
 			default -> "task";
 		};
 
-		return String.format("""
-				Please evaluate the completion quality of the following %s.
-				Current date: %s
+		return String.format(
+				"""
+						Please evaluate the completion quality of the following %s.
+						Current date: %s
 
-				Evaluation constraints:
-				1. Evaluate strictly based on the task and the provided completion result.
-				2. If an external fact or URL cannot be verified from the text alone, label it as "need verification" rather than asserting it is false.
-				3. Do not fail solely on assumptions about calendar-year feasibility unless there is explicit contradiction in the result itself.
-				4. Mark as failed only when core requirements are missing, major content is fabricated from internal evidence, or conclusions are clearly inconsistent.
+						Evaluation constraints:
+						1. Evaluate strictly based on the task and the provided completion result.
+						2. If an external fact or URL cannot be verified from the text alone, label it as "need verification" rather than asserting it is false.
+						3. Do not fail solely on assumptions about calendar-year feasibility unless there is explicit contradiction in the result itself.
+						4. Mark as failed only when core requirements are missing, major content is fabricated from internal evidence, or conclusions are clearly inconsistent.
 
-				**Task Title:** %s
+						**Task Title:** %s
 
-				**Task Description:** %s
+						**Task Description:** %s
 
-				**Completion Result:**
-				%s
-				""", taskTypeDescription, LocalDate.now(), step.getTitle(), step.getDescription(), step.getExecutionRes());
+						**Completion Result:**
+						%s
+						""",
+				taskTypeDescription, LocalDate.now(), step.getTitle(), step.getDescription(), step.getExecutionRes());
 	}
 
 	/**

@@ -36,6 +36,8 @@
 
         <opentelemetry.spring.boot.starter.version>2.9.0</opentelemetry.spring.boot.starter.version>
         <commons-io.version>2.18.0</commons-io.version>
+        <lucene.version>9.12.1</lucene.version>
+        <caffeine.version>3.1.8</caffeine.version>
     </properties>
 
 
@@ -223,6 +225,30 @@
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-graph-observation</artifactId>
             <version>${spring-ai-alibaba.version}</version>
+        </dependency>
+
+        <!-- Lucene for BM25 full-text search in memory search pipeline -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-smartcn</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-queryparser</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <!-- Caffeine for LRU embedding cache -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
         </dependency>
 
     </dependencies>

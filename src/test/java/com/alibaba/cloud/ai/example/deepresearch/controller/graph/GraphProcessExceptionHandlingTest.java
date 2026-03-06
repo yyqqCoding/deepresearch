@@ -27,6 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.codec.ServerSentEvent;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Sinks;
 
 import java.util.concurrent.CompletableFuture;
@@ -97,6 +98,33 @@ class GraphProcessExceptionHandlingTest {
 		assertEquals("流程执行出错", capturedError.get().getMessage(), "错误消息应该匹配");
 
 		verify(generator, atLeastOnce()).next();
+	}
+
+	@Test
+	void testFluxStreamErrorHandling() throws Exception {
+		RuntimeException testException = new RuntimeException("背景调查超时");
+		Sinks.Many<ServerSentEvent<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
+		CountDownLatch eventLatch = new CountDownLatch(1);
+		CountDownLatch completeLatch = new CountDownLatch(1);
+		AtomicBoolean errorEventEmitted = new AtomicBoolean(false);
+		AtomicBoolean reactorErrorObserved = new AtomicBoolean(false);
+
+		sink.asFlux().subscribe(event -> {
+			String data = event.data();
+			if (data != null && data.contains("\"nodeName\": \"__END__\"") && data.contains("服务异常")) {
+				errorEventEmitted.set(true);
+				eventLatch.countDown();
+			}
+		}, error -> {
+			reactorErrorObserved.set(true);
+		}, completeLatch::countDown);
+
+		graphProcess.processStream(graphId, Flux.error(testException), sink);
+
+		assertTrue(eventLatch.await(5, TimeUnit.SECONDS), "应该在5秒内发送错误结束事件");
+		assertTrue(completeLatch.await(5, TimeUnit.SECONDS), "应该在5秒内完成流");
+		assertTrue(errorEventEmitted.get(), "应该发送包含服务异常的结束事件");
+		assertFalse(reactorErrorObserved.get(), "不应该再把异常二次抛给 Reactor 默认错误处理");
 	}
 
 	@Test

@@ -16,6 +16,7 @@
 
 package com.alibaba.cloud.ai.example.deepresearch.node;
 
+import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.example.deepresearch.config.SmartAgentProperties;
 import com.alibaba.cloud.ai.example.deepresearch.model.enums.StreamNodePrefixEnum;
 import com.alibaba.cloud.ai.example.deepresearch.model.dto.Plan;
@@ -25,6 +26,9 @@ import com.alibaba.cloud.ai.example.deepresearch.service.SearchFilterService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SearchInfoService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentDispatcherService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentSelectionHelperService;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemoryGetTool;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchTool;
+import com.alibaba.cloud.ai.example.deepresearch.tool.SearchFilterTool;
 import com.alibaba.cloud.ai.example.deepresearch.util.*;
 import com.alibaba.cloud.ai.example.deepresearch.util.convert.FluxConverter;
 import com.alibaba.cloud.ai.example.deepresearch.util.multiagent.AgentIntegrationUtil;
@@ -32,6 +36,7 @@ import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
+import com.alibaba.cloud.ai.toolcalling.jinacrawler.JinaCrawlerConstants;
 import com.alibaba.cloud.ai.toolcalling.jinacrawler.JinaCrawlerService;
 import com.alibaba.cloud.ai.toolcalling.searches.SearchEnum;
 import org.slf4j.Logger;
@@ -70,22 +75,35 @@ public class ResearcherNode implements NodeAction {
 	// MCP工厂
 	private final McpProviderFactory mcpFactory;
 
+	private final SearchFilterService searchFilterService;
+
 	private final SearchInfoService searchInfoService;
 
 	private final SmartAgentSelectionHelperService smartAgentSelectionHelper;
 
+	private final boolean jinaCrawlerAvailable;
+
+	// Long-term memory tools (optional, may be null)
+	private final MemorySearchTool memorySearchTool;
+
+	private final MemoryGetTool memoryGetTool;
+
 	public ResearcherNode(ChatClient researchAgent, String executorNodeId, ReflectionProcessor reflectionProcessor,
 			McpProviderFactory mcpFactory, SearchFilterService searchFilterService,
 			SmartAgentDispatcherService smartAgentDispatcher, SmartAgentProperties smartAgentProperties,
-			JinaCrawlerService jinaCrawlerService) {
+			JinaCrawlerService jinaCrawlerService, MemorySearchTool memorySearchTool, MemoryGetTool memoryGetTool) {
 		this.researchAgent = researchAgent;
 		this.executorNodeId = executorNodeId;
 		this.nodeName = "researcher_" + executorNodeId;
 		this.reflectionProcessor = reflectionProcessor;
 		this.mcpFactory = mcpFactory;
+		this.searchFilterService = searchFilterService;
 		this.searchInfoService = new SearchInfoService(jinaCrawlerService, searchFilterService, null);
 		this.smartAgentSelectionHelper = AgentIntegrationUtil.createSelectionHelper(smartAgentProperties,
 				smartAgentDispatcher, null, null);
+		this.jinaCrawlerAvailable = jinaCrawlerService != null;
+		this.memorySearchTool = memorySearchTool;
+		this.memoryGetTool = memoryGetTool;
 	}
 
 	@Override
@@ -129,10 +147,30 @@ public class ResearcherNode implements NodeAction {
 					"IMPORTANT: DO NOT include inline citations in the text. Instead, track all sources and include a References section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:\\n- [Source Title](URL)\\n- [Source Title](URL)");
 			messages.add(citationMessage);
 
+			List<String> runtimeToolNames = new ArrayList<>();
+			runtimeToolNames.add("searchFilterTool");
+			if (jinaCrawlerAvailable) {
+				runtimeToolNames.add(JinaCrawlerConstants.TOOL_NAME);
+			}
+			if (memorySearchTool != null) {
+				runtimeToolNames.add("memorySearch");
+			}
+			if (memoryGetTool != null) {
+				runtimeToolNames.add("memoryGet");
+			}
+			messages.add(new UserMessage("Runtime available tools for this request (strict): "
+					+ String.join(", ", runtimeToolNames)
+					+ ". Only call tools in this list by exact name. If a tool is not in this list, do not call it. "
+					+ "Call at most one tool per assistant message, wait for the tool result, and then decide whether another tool is needed. "
+					+ "CRITICAL RULE: Maximum 3 tool calls allowed. If you have already used tools, analyze the existing results and output the final response. DO NOT repeat similar searches in a loop."));
+
 			logger.debug("{} Node messages: {}", nodeName, messages);
 
-			// Get search tool
 			SearchEnum searchEnum = state.value("search_engine", SearchEnum.class).orElse(null);
+			SearchEnum effectiveSearchEnum = searchEnum != null ? searchEnum : SearchEnum.TAVILY;
+			boolean enableSearchFilter = state.value("enable_search_filter", true);
+			SearchFilterTool searchFilterTool = new SearchFilterTool(searchFilterService, effectiveSearchEnum,
+					enableSearchFilter);
 
 			AgentSelectionResult agentSelection = selectSmartAgent(assignedStep, taskContent, state);
 			ChatClient selectedAgent = agentSelection.getSelectedAgent();
@@ -141,13 +179,28 @@ public class ResearcherNode implements NodeAction {
 			updated.putAll(agentSelection.getStateUpdate());
 
 			// Call agent
-			var requestSpec = selectedAgent.prompt();
+			var requestSpec = selectedAgent.prompt()
+				.options(DashScopeChatOptions.builder().withParallelToolCalls(false).build());
 
 			// 使用MCP工厂创建MCP提供者
 			AsyncMcpToolCallbackProvider mcpProvider = mcpFactory != null
 					? mcpFactory.createProvider(state, "researchAgent") : null;
 			if (mcpProvider != null) {
 				requestSpec = requestSpec.toolCallbacks(mcpProvider.getToolCallbacks());
+			}
+			if (jinaCrawlerAvailable) {
+				requestSpec = requestSpec.toolNames(JinaCrawlerConstants.TOOL_NAME);
+			}
+
+			// Ensure prompt-declared built-in search tool is always available at runtime.
+			if (memorySearchTool != null && memoryGetTool != null) {
+				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool, memoryGetTool);
+			}
+			else if (memorySearchTool != null) {
+				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool);
+			}
+			else {
+				requestSpec = requestSpec.tools(searchFilterTool);
 			}
 
 			List<Map<String, String>> siteInformation = new ArrayList<>();
@@ -156,8 +209,8 @@ public class ResearcherNode implements NodeAction {
 				siteInformation = (List<Map<String, String>>) obj;
 			}
 
-			List<Map<String, String>> searchResults = searchInfoService
-				.searchInfo(state.value("enable_search_filter", true), searchEnum, originTaskContent);
+			List<Map<String, String>> searchResults = searchInfoService.searchInfo(enableSearchFilter,
+					effectiveSearchEnum, originTaskContent);
 			siteInformation.addAll(searchResults);
 			updated.put("site_information", siteInformation);
 

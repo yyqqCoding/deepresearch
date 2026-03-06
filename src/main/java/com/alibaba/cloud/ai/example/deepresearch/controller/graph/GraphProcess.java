@@ -110,35 +110,36 @@ public class GraphProcess {
 	public void processStream(GraphId graphId, Flux<NodeOutput> generator, Sinks.Many<ServerSentEvent<String>> sink) {
 		final String graphIdStr = this.safeObjectToJson(graphId);
 		// 创建一个任务，且遇见中断时停止图的运行
-		Future<?> future = executor.submit(() -> {
-			generator.doOnNext(output -> {
-				String nodeName = output.node();
-				String content;
-				if (output instanceof StreamingOutput streamingOutput) {
-					logger.debug("Streaming output from node {}: {}, {}", nodeName, streamingOutput.chunk(), graphId);
-
-					content = buildLLMNodeContent(nodeName, graphId, streamingOutput, output);
+		Future<?> future = executor.submit(() -> generator.subscribe(output -> {
+			String nodeName = output.node();
+			String content;
+			if (output instanceof StreamingOutput streamingOutput) {
+				String streamText = extractStreamingText(streamingOutput);
+				if (StringUtils.isNotBlank(streamText)) {
+					logger.debug("Streaming output from node {}: {}, {}", nodeName,
+							StringUtils.abbreviate(streamText, 200), graphId);
 				}
-				else {
-					logger.debug("Normal output from node {}", nodeName);
-					content = buildNormalNodeContent(graphId, nodeName, output);
-				}
-				if (StringUtils.isNotEmpty(content)) {
-					sink.tryEmitNext(ServerSentEvent.builder(content).build());
-				}
-			}).doOnComplete(() -> {
-				logger.info("Stream processing completed.");
-				sink.tryEmitComplete();
-				// 从任务Map中移出
-				graphTaskFutureMap.remove(graphId);
-			}).doOnError(e -> {
-				logger.error("Error in stream processing", e);
-				sink.tryEmitNext(
-						ServerSentEvent.builder(String.format(TASK_STOPPED_MESSAGE_TEMPLATE, graphIdStr, "服务异常"))
-							.build());
-				sink.tryEmitError(e);
-			}).subscribe();
-		});
+				content = buildLLMNodeContent(nodeName, graphId, streamingOutput, output);
+			}
+			else {
+				logger.debug("Normal output from node {}", nodeName);
+				content = buildNormalNodeContent(graphId, nodeName, output);
+			}
+			if (StringUtils.isNotEmpty(content)) {
+				sink.tryEmitNext(ServerSentEvent.builder(content).build());
+			}
+		}, error -> {
+			logger.error("Error in stream processing", error);
+			sink.tryEmitNext(
+					ServerSentEvent.builder(String.format(TASK_STOPPED_MESSAGE_TEMPLATE, graphIdStr, "服务异常")).build());
+			sink.tryEmitComplete();
+			graphTaskFutureMap.remove(graphId);
+		}, () -> {
+			logger.info("Stream processing completed.");
+			sink.tryEmitComplete();
+			// 从任务Map中移出
+			graphTaskFutureMap.remove(graphId);
+		}));
 		// 存放到Map中
 		Future<?> oldFuture = graphTaskFutureMap.put(graphId, future);
 		Optional.ofNullable(oldFuture).ifPresent((f) -> {
@@ -296,12 +297,28 @@ public class GraphProcess {
 			.map(ChatGenerationMetadata::getFinishReason)
 			.orElse("");
 
-		String textContent = streamingOutput.chunk() == null
-				? streamingOutput.chatResponse().getResult().getOutput().getText() : streamingOutput.chunk();
+		String textContent = extractStreamingText(streamingOutput);
+		if (StringUtils.isBlank(textContent) && StringUtils.isBlank(finishReason)) {
+			return "";
+		}
 		Map<String, Serializable> response = Map.of(nodeName, textContent, "step_title", stepTitle, "visible",
 				prefixEnum.isVisible(), "finishReason", finishReason, "graphId", graphId);
 
 		return this.safeObjectToJson(response);
+	}
+
+	private String extractStreamingText(StreamingOutput streamingOutput) {
+		if (streamingOutput == null) {
+			return "";
+		}
+		if (StringUtils.isNotBlank(streamingOutput.chunk())) {
+			return streamingOutput.chunk();
+		}
+		return Optional.ofNullable(streamingOutput.chatResponse())
+			.map(ChatResponse::getResult)
+			.map(Generation::getOutput)
+			.map(org.springframework.ai.chat.messages.AssistantMessage::getText)
+			.orElse("");
 	}
 
 	private record NodeResponse(String nodeName, GraphId graphId, String displayTitle, Object content,

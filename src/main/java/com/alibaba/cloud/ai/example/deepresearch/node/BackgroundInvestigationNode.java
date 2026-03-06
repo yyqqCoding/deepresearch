@@ -110,11 +110,11 @@ public class BackgroundInvestigationNode implements NodeAction {
 			String query = queries.get(i);
 			List<Message> messageList = new ArrayList<>();
 			TemplateUtil.addShortUserRoleMemory(messageList, state);
-			Message messages = new UserMessage(
-					"搜索问题:" + query + "\n" + "以下是搜索结果：\n\n" + searchResults.stream().map(r -> {
-						return String.format("标题: %s\n权重: %s\n内容: %s\nurl: %s\n", r.get("title"), r.get("weight"),
-								r.get("content"), r.get("url"));
-					}).collect(Collectors.joining("\n\n")));
+			String searchResultsText = searchResults.stream().map(r -> {
+				return String.format("标题: %s\n权重: %s\n内容: %s\nurl: %s\n", r.get("title"), r.get("weight"),
+						r.get("content"), r.get("url"));
+			}).collect(Collectors.joining("\n\n"));
+			Message messages = new UserMessage("搜索问题:" + query + "\n" + "以下是搜索结果：\n\n" + searchResultsText);
 
 			String sessionId = state.value("session_id", String.class).orElse("__default__");
 			List<SessionHistory> reports = sessionContextService.getRecentReports(sessionId);
@@ -128,11 +128,25 @@ public class BackgroundInvestigationNode implements NodeAction {
 			}
 			messageList.add(lastReportMessage);
 			messageList.add(messages);
-			String content = backgroundAgent.prompt().messages(messageList).call().content();
+			long llmStartAt = System.currentTimeMillis();
+			logger.info("Invoking background model {}/{} (queryLength={}, searchResults={}, promptChars={})", i + 1,
+					resultsList.size(), query.length(), searchResults.size(), searchResultsText.length());
+			String content;
+			try {
+				content = backgroundAgent.prompt().messages(messageList).call().content();
+			}
+			catch (Exception e) {
+				logger.error(
+						"Background investigation failed for query {}/{} after {}ms (queryLength={}, searchResults={}, promptChars={})",
+						i + 1, resultsList.size(), System.currentTimeMillis() - llmStartAt, query.length(),
+						searchResults.size(), searchResultsText.length(), e);
+				throw e;
+			}
 
 			backgroundResults.add(content);
 
-			logger.info("背景调查报告生成已完成: {}", backgroundResults.size());
+			logger.info("背景调查报告生成已完成: {} (elapsed={}ms)", backgroundResults.size(),
+					System.currentTimeMillis() - llmStartAt);
 		}
 		resultMap.put("background_investigation_results", backgroundResults);
 
