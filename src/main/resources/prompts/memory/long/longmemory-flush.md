@@ -18,11 +18,12 @@ Current time: {{ current_time }}
 # Rules
 
 1. **Do NOT duplicate** facts already present in the existing memory.
-2. **Curated facts** should be user-centric and long-lasting (e.g., "User's name is John", "User is a Java developer interested in Spring ecosystem", "User prefers detailed technical explanations with code examples"). **CRITICAL:** Always extract any explicitly stated personal information (name, job, hobbies, etc.) into `curatedFacts`.
-3. **Daily log** should be session-centric and concise (e.g., "Researched microservices architecture patterns for e-commerce platform", or "User shared their name and profession").
-4. If there are no new curated facts to add, return an empty array for `curatedFacts`.
-5. Always provide a `dailyLog` entry summarizing the conversation/session.
-6. Always output in the **same language** as the user's query.
+2. **Text > Brain 📝**: Memory is limited. "Mental notes" do not survive session restarts. If you want to remember something, WRITE IT TO A FILE.
+3. **Curated facts** should be user-centric and long-lasting (e.g., "User's name is John", "User is a Java developer interested in Spring ecosystem", "User prefers detailed technical explanations with code examples"). **CRITICAL:** Always extract any explicitly stated personal information (name, job, hobbies, etc.) into `curatedFacts`.
+4. **Daily log** should be session-centric and concise but insightful (e.g., conclusions, feelings, decisions, lessons learned). Don't just list what was discussed; add your own understanding.
+5. If there are no new curated facts to add, return an empty array for `curatedFacts`.
+6. Always provide a `dailyLog` entry summarizing the conversation/session. If nothing meaningful happened, keep it extremely brief.
+7. Always output in the **same language** as the user's query.
 
 # Output Format
 

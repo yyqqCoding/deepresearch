@@ -83,17 +83,17 @@ public class LongTermMemoryProperties {
 	}
 
 	/**
-	 * Get the memory directory path: {workspacePath}/memory/
+	 * Get the daily logs directory path: {workspacePath}/memory/
 	 */
 	public String getMemoryDirectoryPath() {
 		return workspacePath + "/memory";
 	}
 
 	/**
-	 * Get the MEMORY.md file path: {workspacePath}/memory/MEMORY.md
+	 * Get the MEMORY.md file path: {workspacePath}/MEMORY.md
 	 */
 	public String getMemoryFilePath() {
-		return getMemoryDirectoryPath() + "/MEMORY.md";
+		return workspacePath + "/MEMORY.md";
 	}
 
 	/**
