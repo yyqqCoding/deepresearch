@@ -31,11 +31,9 @@ import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.RunnableConfig;
 import com.alibaba.cloud.ai.graph.StateGraph;
 import com.alibaba.cloud.ai.graph.checkpoint.config.SaverConfig;
-import com.alibaba.cloud.ai.graph.checkpoint.constant.SaverEnum;
 import com.alibaba.cloud.ai.graph.checkpoint.savers.MemorySaver;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import com.alibaba.cloud.ai.graph.exception.GraphStateException;
-import com.alibaba.cloud.ai.graph.observation.GraphObservationLifecycleListener;
 import com.alibaba.cloud.ai.graph.state.StateSnapshot;
 import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
@@ -80,13 +78,11 @@ public class ChatController {
 			ObjectProvider<ObservationRegistry> observationRegistry, DeepResearchProperties deepResearchProperties)
 			throws GraphStateException {
 		SaverConfig saverConfig = SaverConfig.builder()
-			.register(SaverEnum.MEMORY.getValue(), new MemorySaver())
+			.register(new MemorySaver())
 			.build();
 		this.compiledGraph = stateGraph.compile(CompileConfig.builder()
 			.saverConfig(saverConfig)
 			.interruptBefore("human_feedback")
-			.withLifecycleListener(new GraphObservationLifecycleListener(
-					observationRegistry.getIfUnique(() -> ObservationRegistry.NOOP)))
 			.build());
 		this.compiledGraph.setMaxIterations(deepResearchProperties.getMaxIterations());
 		this.searchBeanUtil = searchBeanUtil;
@@ -128,7 +124,7 @@ public class ChatController {
 		else {
 			ChatRequestProcess.initializeObjectMap(chatRequest, objectMap);
 			logger.info("init inputs: {}", objectMap);
-			Flux<NodeOutput> resultFuture = compiledGraph.fluxStream(objectMap, runnableConfig);
+			Flux<NodeOutput> resultFuture = compiledGraph.stream(objectMap, runnableConfig);
 			graphProcess.processStream(graphId, resultFuture, sink);
 		}
 
@@ -163,10 +159,10 @@ public class ChatController {
 
 		StateSnapshot stateSnapshot = compiledGraph.getState(runnableConfig);
 		OverAllState state = stateSnapshot.state();
-		state.withResume();
-		state.withHumanFeedback(new OverAllState.HumanFeedback(objectMap, "research_team"));
+		state.updateState(objectMap);
+		RunnableConfig resumeConfig = stateSnapshot.config().withResume();
 
-		Flux<NodeOutput> resultFuture = compiledGraph.fluxStreamFromInitialNode(state, runnableConfig);
+		Flux<NodeOutput> resultFuture = compiledGraph.streamFromInitialNode(state, resumeConfig);
 		graphProcess.processStream(new GraphId(humanFeedback.sessionId(), humanFeedback.threadId()), resultFuture,
 				sink);
 

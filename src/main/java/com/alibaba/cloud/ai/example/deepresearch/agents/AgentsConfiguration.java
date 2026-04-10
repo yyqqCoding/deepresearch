@@ -16,6 +16,7 @@
 
 package com.alibaba.cloud.ai.example.deepresearch.agents;
 
+import com.alibaba.cloud.ai.example.deepresearch.config.condition.ConditionalOnLocalLongTermMemory;
 import com.alibaba.cloud.ai.example.deepresearch.config.PythonCoderProperties;
 import com.alibaba.cloud.ai.example.deepresearch.model.multiagent.AgentType;
 import com.alibaba.cloud.ai.example.deepresearch.tool.PlannerTool;
@@ -230,7 +231,7 @@ public class AgentsConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "spring.ai.alibaba.deepresearch.long-term-memory.enabled", havingValue = "true")
+	@ConditionalOnLocalLongTermMemory
 	public ChatClient longTermMemoryAgent(ChatClient.Builder longTermMemoryChatClientBuilder) {
 		return longTermMemoryChatClientBuilder.build();
 	}

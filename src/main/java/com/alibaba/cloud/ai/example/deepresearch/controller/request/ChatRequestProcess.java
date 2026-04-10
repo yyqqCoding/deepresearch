@@ -18,6 +18,7 @@ package com.alibaba.cloud.ai.example.deepresearch.controller.request;
 
 import com.alibaba.cloud.ai.example.deepresearch.model.req.ChatRequest;
 import com.alibaba.cloud.ai.example.deepresearch.util.SearchBeanUtil;
+import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
@@ -76,6 +77,7 @@ public class ChatRequestProcess {
 		objectMap.put("search_engine", chatRequest.searchEngine());
 		objectMap.put("enable_search_filter", chatRequest.enableSearchFilter());
 		objectMap.put("optimize_query_num", chatRequest.optimizeQueryNum());
+		objectMap.put(StateUtil.RESEARCH_SEARCH_MODE, StateUtil.RESEARCH_SEARCH_MODE_MCP_FIRST_FALLBACK_TAVILY);
 		objectMap.put("session_id", chatRequest.sessionId());
 		objectMap.put("user_upload_file", chatRequest.isUploadFile() != null && chatRequest.isUploadFile());
 	}

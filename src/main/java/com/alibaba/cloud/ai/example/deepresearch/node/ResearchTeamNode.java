@@ -53,8 +53,8 @@ public class ResearchTeamNode implements NodeAction {
 	}
 
 	public boolean areAllExecutionResultsPresent(Plan plan) {
-		if (CollectionUtils.isEmpty(plan.getSteps())) {
-			return false;
+		if (plan.isHasEnoughContext() || CollectionUtils.isEmpty(plan.getSteps())) {
+			return true;
 		}
 
 		return plan.getSteps()

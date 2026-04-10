@@ -17,6 +17,9 @@
 package com.alibaba.cloud.ai.example.deepresearch.node;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.ShortTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.config.LongTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.MemoryScope;
+import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryDecisionService;
 import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
 import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
@@ -33,6 +36,7 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,38 +64,55 @@ public class CoordinatorNode implements NodeAction {
 
 	private final LongTermMemoryService longTermMemoryService;
 
+	private final LongTermMemoryProperties longTermMemoryProperties;
+
+	private final LongTermMemoryDecisionService longTermMemoryDecisionService;
+
 	public CoordinatorNode(ChatClient coordinatorAgent, SessionContextService sessionContextService,
 			MessageWindowChatMemory messageWindowChatMemory, ShortTermMemoryProperties shortTermMemoryProperties,
-			LongTermMemoryService longTermMemoryService) {
+			LongTermMemoryService longTermMemoryService, LongTermMemoryProperties longTermMemoryProperties,
+			LongTermMemoryDecisionService longTermMemoryDecisionService) {
 		this.coordinatorAgent = coordinatorAgent;
 		this.sessionContextService = sessionContextService;
 		this.messageWindowChatMemory = messageWindowChatMemory;
 		this.shortTermMemoryProperties = shortTermMemoryProperties;
 		this.longTermMemoryService = longTermMemoryService;
+		this.longTermMemoryProperties = longTermMemoryProperties;
+		this.longTermMemoryDecisionService = longTermMemoryDecisionService;
 	}
 
 	@Override
 	public Map<String, Object> apply(OverAllState state) throws Exception {
 		logger.info("coordinator node is running.");
 		List<Message> messages = new ArrayList<>();
+		String sessionId = StateUtil.getSessionId(state);
+		String threadId = StateUtil.getThreadId(state);
+		String userQuery = StateUtil.getQuery(state);
+		MemoryScope memoryScope = longTermMemoryService == null ? null
+				: MemoryScope.fromProperties(longTermMemoryProperties, sessionId, threadId);
 		// 1. 添加消息
 		// 1.0 注入长期记忆上下文 (MEMORY.md + 近日日志)
-		if (longTermMemoryService != null) {
-			String longTermContext = longTermMemoryService.loadSessionContext();
-			if (org.springframework.util.StringUtils.hasText(longTermContext)) {
+			if (longTermMemoryService != null) {
+				String longTermContext = longTermMemoryService.loadRelevantContext(memoryScope, userQuery);
+				if (StringUtils.hasText(longTermContext)) {
 				messages.add(new org.springframework.ai.chat.messages.SystemMessage(
 						"The following is your long-term memory about this user and recent research sessions:\n\n"
 								+ longTermContext));
-				logger.info("Injected long-term memory context ({} chars) into coordinator prompt.",
-						longTermContext.length());
+					logger.info("Injected long-term memory context ({} chars) into coordinator prompt.",
+							longTermContext.length());
+				}
 			}
+		if (longTermMemoryDecisionService.isSelfMemoryQuery(userQuery)) {
+			messages.add(new org.springframework.ai.chat.messages.SystemMessage(
+					"Self-memory query rule: only answer using retrieved long-term memory or the current conversation context. "
+							+ "If no reliable memory is available, explicitly say you cannot confirm yet and ask the user to provide it again. "
+							+ "Never guess or invent the user's name, role, company, city, preferences, or other personal facts."));
 		}
 		// 1.1 添加预置提示消息
 		TemplateUtil.addShortUserRoleMemory(messages, state);
 		messages.add(TemplateUtil.getMessage("coordinator"));
 
 		// 添加历史消息UserMessage和AssistantMessage交替
-		String sessionId = StateUtil.getSessionId(state);
 		boolean enabledShortTermMemory = shortTermMemoryProperties.isEnabled();
 		if (enabledShortTermMemory) {
 			List<Message> sessionHistoryMemory = messageWindowChatMemory.get(sessionId);
@@ -100,7 +121,7 @@ public class CoordinatorNode implements NodeAction {
 			}
 		}
 		// 1.2 添加用户提问
-		UserMessage userMessage = new UserMessage(StateUtil.getQuery(state));
+		UserMessage userMessage = new UserMessage(userQuery);
 		if (enabledShortTermMemory) {
 			messageWindowChatMemory.add(sessionId, userMessage);
 		}
@@ -136,9 +157,7 @@ public class CoordinatorNode implements NodeAction {
 			// V2.2: 通用对话记忆沉淀
 			// 如果不进入深度研究，直接在此处持久化该次简短对话的记忆（包括每日流水日志及可能的长期画像萃取）
 			try {
-				String threadId = StateUtil.getThreadId(state);
 				GraphId graphId = new GraphId(sessionId, threadId);
-				String userQuery = StateUtil.getQuery(state);
 
 				// 1. 保存到会话历史记录列表 (用于历史回溯)
 				sessionContextService.addSessionHistory(graphId,
@@ -148,12 +167,18 @@ public class CoordinatorNode implements NodeAction {
 							.report(assistantText)
 							.build());
 
-				// 2. 异步触发长期记忆萃取及日增量日志保存 (MEMORY.md & YYYY-MM-DD.md)
-				if (longTermMemoryService != null) {
-					logger.info("Triggering long-term memory flush for short conversation, Thread ID: {}", threadId);
-					longTermMemoryService.flushMemory(userQuery, assistantText);
+					// 2. 异步触发长期记忆萃取及日增量日志保存 (MEMORY.md & YYYY-MM-DD.md)
+					if (longTermMemoryService != null) {
+						if (longTermMemoryDecisionService.isSelfMemoryQuery(userQuery)) {
+							logger.info("Skipping inferred long-term memory flush for self-memory query, Thread ID: {}",
+									threadId);
+						}
+							else {
+								logger.info("Triggering long-term memory flush for short conversation, Thread ID: {}", threadId);
+								longTermMemoryService.flushMemory(memoryScope, userQuery, assistantText);
+							}
+						}
 				}
-			}
 			catch (Exception e) {
 				logger.error("Failed to save short conversation memory, session: {}", sessionId, e);
 			}

@@ -17,6 +17,7 @@
 package com.alibaba.cloud.ai.example.deepresearch.memory;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.LongTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.config.condition.ConditionalOnLocalLongTermMemory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -41,6 +42,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author deepresearch
  */
 @Component
+@ConditionalOnLocalLongTermMemory
 public class MarkdownMemoryFileManager {
 
 	private static final Logger logger = LoggerFactory.getLogger(MarkdownMemoryFileManager.class);

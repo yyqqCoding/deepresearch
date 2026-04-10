@@ -23,30 +23,27 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.alibaba.cloud.ai.graph.StateGraph.END;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class HumanFeedbackNodeTest {
 
 	@Test
-	@DisplayName("terminate feedback should end workflow")
-	void shouldEndWorkflowWhenTerminateIsTrue() throws Exception {
-		OverAllState state = new OverAllState(new HashMap<>(Map.of("plan_iterations", 0, "max_plan_iterations", 3)));
-		state.withHumanFeedback(
-				new OverAllState.HumanFeedback(new HashMap<>(Map.of("terminate", true)), "research_team"));
+	@DisplayName("max iterations should keep workflow on research team")
+	void shouldStayOnResearchTeamWhenMaxIterationsReached() throws Exception {
+		OverAllState state = new OverAllState(new HashMap<>(Map.of("plan_iterations", 3, "max_plan_iterations", 3)));
 
 		HumanFeedbackNode node = new HumanFeedbackNode();
 		Map<String, Object> updated = node.apply(state);
 
-		assertEquals(END, updated.get("human_next_node"));
+		assertEquals("research_team", updated.get("human_next_node"));
 	}
 
 	@Test
 	@DisplayName("negative feedback should route back to planner")
 	void shouldRouteBackToPlannerWhenFeedbackIsFalse() throws Exception {
-		OverAllState state = new OverAllState(new HashMap<>(Map.of("plan_iterations", 0, "max_plan_iterations", 3)));
-		state.withHumanFeedback(new OverAllState.HumanFeedback(
-				new HashMap<>(Map.of("feedback", false, "feedback_content", "补充预算维度")), "research_team"));
+		OverAllState state = new OverAllState(
+				new HashMap<>(Map.of("plan_iterations", 0, "max_plan_iterations", 3, "feedback", false,
+						"feedback_content", "补充预算维度")));
 
 		HumanFeedbackNode node = new HumanFeedbackNode();
 		Map<String, Object> updated = node.apply(state);

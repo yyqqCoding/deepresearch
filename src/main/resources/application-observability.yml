@@ -26,10 +26,10 @@ otel:
       deployment.environment: development
   # configure exporter
   traces:
-    exporter: otlp
+    exporter: none
     sampler: always_on
   metrics:
-    exporter: otlp
+    exporter: none
   # logs exportation inhibited for langfuse currently cannot support
   logs:
     exporter: none

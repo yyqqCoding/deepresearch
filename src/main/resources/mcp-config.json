@@ -2,6 +2,12 @@
     "researchAgent": {
         "mcp-servers": [
             {
+                "url": "http://localhost:8765",
+                "sse-endpoint": "/sse",
+                "description": "ResearchMCP - 深度AI搜索引擎，提供 deep_web_search等工具",
+                "enabled": true
+            },
+            {
                 "url": "https://mcp.amap.com?key=${AMAP_API_KEY}",
                 "sse-endpoint": "/sse",
                 "description": "这是一个高德地图服务",

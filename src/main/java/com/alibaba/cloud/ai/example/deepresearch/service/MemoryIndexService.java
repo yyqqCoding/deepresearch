@@ -17,6 +17,7 @@
 package com.alibaba.cloud.ai.example.deepresearch.service;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.LongTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.config.condition.ConditionalOnLocalLongTermMemory;
 import com.alibaba.cloud.ai.example.deepresearch.memory.BM25MemoryIndex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,7 @@ import java.util.stream.Stream;
  * @author deepresearch
  */
 @Service
+@ConditionalOnLocalLongTermMemory
 @ConditionalOnProperty(name = "spring.ai.alibaba.deepresearch.long-term-memory.memory-search.enabled",
 		havingValue = "true")
 public class MemoryIndexService {

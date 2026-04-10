@@ -16,9 +16,10 @@
 
 package com.alibaba.cloud.ai.example.deepresearch.service;
 
+import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.MemoryScope;
+
 /**
- * Service interface for managing long-term memory. Provides read and write operations for
- * persistent memory using OpenClaw-style Markdown files.
+ * Service interface for managing long-term memory.
  *
  * @author deepresearch
  */
@@ -28,17 +29,12 @@ public interface LongTermMemoryService {
 	 * Load the session context from long-term memory. Reads MEMORY.md + today's log +
 	 * yesterday's log and returns them as a combined context string for injection into
 	 * the system prompt.
+	 * @param scope current memory scope
+	 * @param query current user query used for relevant retrieval
 	 * @return combined long-term memory context, or empty string if disabled/empty
 	 */
-	String loadSessionContext();
+	String loadRelevantContext(MemoryScope scope, String query);
 
-	/**
-	 * Flush the current session's knowledge into long-term memory files. Uses LLM to
-	 * summarize and categorize the session content into: - Curated facts → MEMORY.md -
-	 * Daily research log → YYYY-MM-DD.md
-	 * @param userQuery the original user query
-	 * @param finalReport the generated report content
-	 */
-	void flushMemory(String userQuery, String finalReport);
+	void flushMemory(MemoryScope scope, String userQuery, String assistantOutput);
 
 }

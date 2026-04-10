@@ -28,6 +28,7 @@ import com.alibaba.cloud.ai.graph.async.AsyncGenerator;
 import com.alibaba.cloud.ai.graph.exception.GraphRunnerException;
 import com.alibaba.cloud.ai.graph.state.StateSnapshot;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
@@ -88,12 +89,13 @@ public class GraphProcess {
 
 	public void handleHumanFeedback(GraphId graphId, ChatRequest chatRequest, Map<String, Object> objectMap,
 			RunnableConfig runnableConfig, Sinks.Many<ServerSentEvent<String>> sink) throws GraphRunnerException {
-		objectMap.put("feedback", chatRequest.interruptFeedback());
+		objectMap.put("feedback", false);
+		objectMap.put("feedback_content", chatRequest.interruptFeedback());
 		StateSnapshot stateSnapshot = compiledGraph.getState(runnableConfig);
 		OverAllState state = stateSnapshot.state();
-		state.withResume();
-		state.withHumanFeedback(new OverAllState.HumanFeedback(objectMap, "research_team"));
-		Flux<NodeOutput> resultFuture = compiledGraph.fluxStreamFromInitialNode(state, runnableConfig);
+		state.updateState(objectMap);
+		RunnableConfig resumeConfig = stateSnapshot.config().withResume();
+		Flux<NodeOutput> resultFuture = compiledGraph.streamFromInitialNode(state, resumeConfig);
 		processStream(graphId, resultFuture, sink);
 	}
 
@@ -230,7 +232,7 @@ public class GraphProcess {
 				String content;
 				if (output instanceof StreamingOutput streamingOutput) {
 					logger.debug("Streaming output from node {}: {}, {}", nodeName,
-							streamingOutput.chatResponse().getResult().getOutput().getText(), graphId);
+							StringUtils.abbreviate(extractStreamingText(streamingOutput), 200), graphId);
 
 					content = buildLLMNodeContent(nodeName, graphId, streamingOutput, output);
 				}
@@ -291,7 +293,7 @@ public class GraphProcess {
 			return "";
 		}
 		String stepTitle = (String) output.state().value(nodeName + "_step_title").orElse("");
-		String finishReason = Optional.ofNullable(streamingOutput.chatResponse())
+		String finishReason = extractChatResponse(streamingOutput)
 			.map(ChatResponse::getResult)
 			.map(Generation::getMetadata)
 			.map(ChatGenerationMetadata::getFinishReason)
@@ -311,18 +313,38 @@ public class GraphProcess {
 		if (streamingOutput == null) {
 			return "";
 		}
+		if (streamingOutput.message() instanceof org.springframework.ai.chat.messages.AssistantMessage assistantMessage
+				&& StringUtils.isNotBlank(assistantMessage.getText())) {
+			return assistantMessage.getText();
+		}
 		if (StringUtils.isNotBlank(streamingOutput.chunk())) {
 			return streamingOutput.chunk();
 		}
-		return Optional.ofNullable(streamingOutput.chatResponse())
+		Object originData = streamingOutput.getOriginData();
+		if (originData instanceof String text) {
+			return text;
+		}
+		return extractChatResponse(streamingOutput)
 			.map(ChatResponse::getResult)
 			.map(Generation::getOutput)
 			.map(org.springframework.ai.chat.messages.AssistantMessage::getText)
 			.orElse("");
 	}
 
+	private Optional<ChatResponse> extractChatResponse(StreamingOutput streamingOutput) {
+		if (streamingOutput == null) {
+			return Optional.empty();
+		}
+		Object originData = streamingOutput.getOriginData();
+		if (originData instanceof ChatResponse chatResponse) {
+			return Optional.of(chatResponse);
+		}
+		return Optional.empty();
+	}
+
+	@JsonInclude(JsonInclude.Include.NON_NULL)
 	private record NodeResponse(String nodeName, GraphId graphId, String displayTitle, Object content,
-			Object siteInformation) {
+			Object siteInformation, Object output) {
 	}
 
 	private String buildNormalNodeContent(GraphId graphId, String nodeName, NodeOutput output) {
@@ -331,13 +353,17 @@ public class GraphProcess {
 			return "";
 		}
 		Object content;
+		Object directOutput = null;
 		// 不同节点给前端的内容不一样
 		content = switch (nodeEnum) {
 			case START -> {
 				String query = output.state().data().get("query").toString();
 				yield Map.of("query", query);
 			}
-			case COORDINATOR -> output.state().data().get("deep_research");
+			case COORDINATOR -> {
+				directOutput = output.state().data().get("output");
+				yield output.state().data().get("deep_research");
+			}
 			case REWRITE_MULTI_QUERY, HUMAN_FEEDBACK, END -> output.state().data();
 			case PLANNER -> output.state().data().get("planner_content");
 			case RESEARCH_TEAM -> {
@@ -353,7 +379,8 @@ public class GraphProcess {
 				|| (Objects.equals(content, "") && Objects.equals(site_information, ""))) {
 			return "";
 		}
-		NodeResponse response = new NodeResponse(nodeName, graphId, displayTitle, content, site_information);
+		NodeResponse response = new NodeResponse(nodeName, graphId, displayTitle, content, site_information,
+				directOutput);
 		try {
 			return OBJECT_MAPPER.writeValueAsString(response);
 		}

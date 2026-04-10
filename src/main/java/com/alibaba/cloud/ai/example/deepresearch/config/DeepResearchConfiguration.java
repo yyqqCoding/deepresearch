@@ -24,12 +24,13 @@ import com.alibaba.cloud.ai.example.deepresearch.model.enums.ParallelEnum;
 import com.alibaba.cloud.ai.example.deepresearch.node.*;
 import com.alibaba.cloud.ai.example.deepresearch.service.RagNodeService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SessionContextService;
+import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryDecisionService;
 import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.QuestionClassifierService;
 import com.alibaba.cloud.ai.example.deepresearch.service.ReportService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SearchPlatformSelectionService;
 import com.alibaba.cloud.ai.example.deepresearch.tool.MemoryGetTool;
-import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchTool;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchSupport;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentDispatcherService;
 
 import com.alibaba.cloud.ai.example.deepresearch.serializer.DeepResearchStateSerializer;
@@ -37,6 +38,7 @@ import com.alibaba.cloud.ai.example.deepresearch.service.InfoCheckService;
 import com.alibaba.cloud.ai.example.deepresearch.service.SearchFilterService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.ToolCallingSearchService;
 import com.alibaba.cloud.ai.example.deepresearch.util.ReflectionProcessor;
+import com.alibaba.cloud.ai.example.deepresearch.util.StateUtil;
 import com.alibaba.cloud.ai.graph.GraphRepresentation;
 import com.alibaba.cloud.ai.graph.KeyStrategy;
 import com.alibaba.cloud.ai.graph.KeyStrategyFactory;
@@ -113,6 +115,9 @@ public class DeepResearchConfiguration {
 	private ShortTermMemoryProperties shortTermMemoryProperties;
 
 	@Autowired
+	private LongTermMemoryProperties longTermMemoryProperties;
+
+	@Autowired
 	private ShortTermMemoryRepository shortTermMemoryRepository;
 
 	@Autowired(required = false)
@@ -162,10 +167,13 @@ public class DeepResearchConfiguration {
 	private LongTermMemoryService longTermMemoryService;
 
 	@Autowired(required = false)
-	private MemorySearchTool memorySearchTool;
+	private MemorySearchSupport memorySearchTool;
 
 	@Autowired(required = false)
 	private MemoryGetTool memoryGetTool;
+
+	@Autowired
+	private LongTermMemoryDecisionService longTermMemoryDecisionService;
 
 	@Bean
 	public ReflectionProcessor reflectionProcessor() {
@@ -200,6 +208,9 @@ public class DeepResearchConfiguration {
 			keyStrategyHashMap.put("max_step_num", new ReplaceStrategy());
 			keyStrategyHashMap.put("mcp_settings", new ReplaceStrategy());
 			keyStrategyHashMap.put("optimize_query_num", new ReplaceStrategy());
+			keyStrategyHashMap.put(StateUtil.RESEARCH_SEARCH_MODE, new ReplaceStrategy());
+			keyStrategyHashMap.put(StateUtil.RESEARCH_SEARCH_ROUTE, new ReplaceStrategy());
+			keyStrategyHashMap.put(StateUtil.RESEARCH_SEARCH_FALLBACK_REASON, new ReplaceStrategy());
 			keyStrategyHashMap.put("user_upload_file", new ReplaceStrategy());
 			keyStrategyHashMap.put("session_id", new ReplaceStrategy());
 
@@ -238,7 +249,8 @@ public class DeepResearchConfiguration {
 							shortTermMemoryRepository)))
 			.addNode("coordinator",
 					node_async(new CoordinatorNode(coordinatorAgent, sessionContextService, messageWindowChatMemory,
-							shortTermMemoryProperties, longTermMemoryService)))
+							shortTermMemoryProperties, longTermMemoryService, longTermMemoryProperties,
+							longTermMemoryDecisionService)))
 			.addNode("rewrite_multi_query",
 					node_async(new RewriteAndMultiQueryNode(rewriteAndMultiQueryChatClientBuilder,
 							shortTermMemoryRepository, shortTermMemoryProperties)))
@@ -256,7 +268,8 @@ public class DeepResearchConfiguration {
 			.addNode("research_team", node_async(new ResearchTeamNode()))
 			.addNode("parallel_executor", node_async(new ParallelExecutorNode(deepResearchProperties)))
 			.addNode("reporter", node_async(new ReporterNode(reporterAgent, reportService, sessionContextService,
-					messageWindowChatMemory, shortTermMemoryProperties, longTermMemoryService)));
+					messageWindowChatMemory, shortTermMemoryProperties, longTermMemoryService,
+					longTermMemoryProperties)));
 
 		// 添加并行节点块
 		configureParallelNodes(stateGraph);
@@ -310,7 +323,7 @@ public class DeepResearchConfiguration {
 			stateGraph.addNode(nodeId,
 					node_async(new ResearcherNode(researchAgent, String.valueOf(i), reflectionProcessor,
 							mcpProviderFactory, searchFilterService, smartAgentDispatcher, smartAgentProperties,
-							jinaCrawlerService, memorySearchTool, memoryGetTool)));
+							memorySearchTool, memoryGetTool, deepResearchProperties.getResearchMcpExtraSources())));
 			stateGraph.addEdge("parallel_executor", nodeId).addEdge(nodeId, "research_team");
 		}
 	}

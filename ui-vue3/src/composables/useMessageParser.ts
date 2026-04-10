@@ -73,16 +73,21 @@ export function useMessageParser(options: MessageParserOptions) {
   const parseSuccessMessage = (msg: string) => {
     // 解析完整数据
     const jsonArray: NormalNode[] = parseJsonTextStrict(msg)
+    const endNode = findNode(jsonArray, '__END__')
 
     // 闲聊模式
     const coordinatorNode = findNode(jsonArray, 'coordinator')
     if (coordinatorNode && !coordinatorNode.content) {
-      const endNode = findNode(jsonArray, '__END__')
-      return { type: 'chat', content: endNode?.content.output }
+      const chatContent = endNode?.content?.output ?? coordinatorNode.output
+      return { type: 'chat', content: chatContent }
+    }
+
+    // 兼容只有 __END__ 的直答场景
+    if (endNode?.content?.deep_research === false && endNode.content?.output) {
+      return { type: 'chat', content: endNode.content.output }
     }
 
     // 用户终止
-    const endNode = findNode(jsonArray, '__END__')
     if (endNode && endNode.content?.reason === '用户终止') {
       current.deepResearchDetail = false
       return { type: 'termination', content: endNode.content.reason }

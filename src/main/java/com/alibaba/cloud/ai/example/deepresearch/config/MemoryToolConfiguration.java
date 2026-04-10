@@ -16,6 +16,7 @@
 
 package com.alibaba.cloud.ai.example.deepresearch.config;
 
+import com.alibaba.cloud.ai.example.deepresearch.config.condition.ConditionalOnLocalLongTermMemory;
 import com.alibaba.cloud.ai.example.deepresearch.memory.BM25MemoryIndex;
 import com.alibaba.cloud.ai.example.deepresearch.memory.HybridMemorySearchEngine;
 import com.alibaba.cloud.ai.example.deepresearch.memory.MarkdownMemoryFileManager;
@@ -35,6 +36,7 @@ import org.springframework.context.annotation.Configuration;
  * @author deepresearch
  */
 @Configuration
+@ConditionalOnLocalLongTermMemory
 @ConditionalOnProperty(name = "spring.ai.alibaba.deepresearch.long-term-memory.memory-search.enabled",
 		havingValue = "true")
 public class MemoryToolConfiguration {

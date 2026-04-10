@@ -17,7 +17,9 @@
 package com.alibaba.cloud.ai.example.deepresearch.service;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.LongTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.config.condition.ConditionalOnLocalLongTermMemory;
 import com.alibaba.cloud.ai.example.deepresearch.memory.MarkdownMemoryFileManager;
+import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.MemoryScope;
 import com.alibaba.cloud.ai.example.deepresearch.util.JsonUtil;
 import com.alibaba.cloud.ai.example.deepresearch.util.LlmJsonExtractor;
 import org.slf4j.Logger;
@@ -26,7 +28,6 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
@@ -50,7 +51,7 @@ import java.util.concurrent.CompletableFuture;
  * @author deepresearch
  */
 @Service
-@ConditionalOnProperty(name = "spring.ai.alibaba.deepresearch.long-term-memory.enabled", havingValue = "true")
+@ConditionalOnLocalLongTermMemory
 public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 
 	private static final Logger logger = LoggerFactory.getLogger(LongTermMemoryServiceImpl.class);
@@ -77,7 +78,7 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 	}
 
 	@Override
-	public String loadSessionContext() {
+	public String loadRelevantContext(MemoryScope scope, String query) {
 		if (!properties.isEnabled()) {
 			return "";
 		}
@@ -126,7 +127,7 @@ public class LongTermMemoryServiceImpl implements LongTermMemoryService {
 	}
 
 	@Override
-	public void flushMemory(String userQuery, String finalReport) {
+	public void flushMemory(MemoryScope scope, String userQuery, String finalReport) {
 		if (!properties.isEnabled() || !properties.isAutoFlush()) {
 			logger.debug("Long-term memory flush is disabled.");
 			return;

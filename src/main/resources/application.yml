@@ -27,6 +27,8 @@ spring:
           min-idle: 0
           max-wait: -1ms
   ai:
+    vectorstore:
+      type: simple
     dashscope:
       api-key: ${AI_DASHSCOPE_API_KEY}
       base-url: https://dashscope.aliyuncs.com
@@ -36,9 +38,13 @@ spring:
 
     mcp:
       client:
-        enabled: false
+        enabled: true
         type: ASYNC
+        request-timeout: PT5M
     alibaba:
+      graph:
+        observation:
+          enabled: false
       toolcalling:
         baidu:
           search:
@@ -98,8 +104,9 @@ spring:
           read-timeout-ms: 300000
           connection-request-timeout-ms: 30000
         mcp:
-          enabled: false
+          enabled: true
           config-location: classpath:mcp-config.json
+        research-mcp-extra-sources: 2
         parallel-node-count:
           researcher: 4
           coder: 4
@@ -142,9 +149,24 @@ spring:
         # 长期记忆配置 (OpenClaw Markdown方式)
         long-term-memory:
           enabled: true
+          provider: mem0
           # 保存到当前项目目录下: {user.dir}/.deepresearch/workspace/memory/
           workspace-path: ${user.dir}/.deepresearch/workspace
           auto-flush: true
+          mem0:
+            api-key: m0-IZ7vnizP4LQ1GhjVX9HmQQ08fxt3amWEMay9Zodo
+            user-id: liyongqing
+            app-id: deepresearch
+            top-k: 10
+            infer-on-write: true
+            async-mode: true
+            custom-instructions: >
+              Please extract and output memories strictly in Simplified Chinese.
+              Must use Simplified Chinese for all extracted memories.
+              Preserve Chinese names, company names, job titles, and other proper nouns exactly as written in the source conversation.
+              Never transliterate Chinese names into pinyin or translate them into English.
+              For identity facts such as name, occupation, company, and city, prefer the user's exact original wording.
+              If the original text is Chinese, the memory must remain Chinese.
           # 记忆语义检索配置 (v2 hybrid search)
           memory-search:
             enabled: true
@@ -163,4 +185,5 @@ spring:
 logging:
   level:
     com.alibaba.cloud.ai.example.deepresearch: debug
+    com.alibaba.cloud.ai.example.deepresearch.controller.graph.GraphProcess: info
 

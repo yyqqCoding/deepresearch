@@ -25,9 +25,9 @@ import io.modelcontextprotocol.spec.McpSchema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.mcp.AsyncMcpToolCallbackProvider;
-import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
-import org.springframework.ai.mcp.client.autoconfigure.configurer.McpAsyncClientConfigurer;
-import org.springframework.ai.mcp.client.autoconfigure.properties.McpClientCommonProperties;
+import org.springframework.ai.mcp.client.common.autoconfigure.NamedClientMcpTransport;
+import org.springframework.ai.mcp.client.common.autoconfigure.configurer.McpAsyncClientConfigurer;
+import org.springframework.ai.mcp.client.common.autoconfigure.properties.McpClientCommonProperties;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
@@ -95,7 +95,9 @@ public class McpClientUtil {
 					McpSchema.Implementation clientInfo = new McpSchema.Implementation(commonProperties.getName(),
 							commonProperties.getVersion());
 
-					McpClient.AsyncSpec spec = McpClient.async(namedTransport.transport()).clientInfo(clientInfo);
+					McpClient.AsyncSpec spec = McpClient.async(namedTransport.transport())
+						.clientInfo(clientInfo)
+						.requestTimeout(commonProperties.getRequestTimeout());
 					spec = mcpAsyncClientConfigurer.configure(namedTransport.name(), spec);
 					McpAsyncClient client = spec.build();
 

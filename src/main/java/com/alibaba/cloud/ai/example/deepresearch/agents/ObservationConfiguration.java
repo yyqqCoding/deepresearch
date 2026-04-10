@@ -19,13 +19,10 @@ package com.alibaba.cloud.ai.example.deepresearch.agents;
 import com.alibaba.cloud.ai.example.deepresearch.config.ObservationProperties;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationHandler;
-import io.micrometer.observation.ObservationRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.tool.definition.ToolDefinition;
 import org.springframework.ai.tool.observation.ToolCallingObservationContext;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -42,6 +39,8 @@ import org.springframework.context.annotation.Configuration;
 public class ObservationConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(ObservationConfiguration.class);
+
+	private static final int TOOL_RESULT_LOG_LIMIT = 256;
 
 	@Bean
 	public ObservationHandler<ToolCallingObservationContext> toolCallingObservationContextObservationHandler() {
@@ -60,19 +59,35 @@ public class ObservationConfiguration {
 			@Override
 			public void onStop(ToolCallingObservationContext context) {
 				ToolDefinition toolDefinition = context.getToolDefinition();
-				logger.info("✅ToolCalling done: {} - {}", toolDefinition.name(), context.getToolCallResult());
+				logger.info("✅ToolCalling done: {} - {}", toolDefinition.name(),
+						summarizeToolCallResult(context.getToolCallResult()));
 			}
 		};
 	}
 
-	@Bean
-	@ConditionalOnMissingBean(name = "observationRegistry")
-	public ObservationRegistry observationRegistry(
-			ObjectProvider<ObservationHandler<?>> observationHandlerObjectProvider) {
-		ObservationRegistry observationRegistry = ObservationRegistry.create();
-		ObservationRegistry.ObservationConfig observationConfig = observationRegistry.observationConfig();
-		observationHandlerObjectProvider.orderedStream().forEach(observationConfig::observationHandler);
-		return observationRegistry;
+	static String summarizeToolCallResult(String toolCallResult) {
+		if (toolCallResult == null) {
+			return "<null>";
+		}
+		String sanitized = sanitizeForLog(toolCallResult);
+		if (sanitized.length() <= TOOL_RESULT_LOG_LIMIT) {
+			return sanitized;
+		}
+		return sanitized.substring(0, TOOL_RESULT_LOG_LIMIT) + "...(truncated, length=" + sanitized.length() + ")";
+	}
+
+	private static String sanitizeForLog(String value) {
+		StringBuilder sanitized = new StringBuilder(value.length());
+		for (int i = 0; i < value.length(); i++) {
+			char ch = value.charAt(i);
+			if (Character.isISOControl(ch) && ch != '\n' && ch != '\r' && ch != '\t') {
+				sanitized.append('?');
+			}
+			else {
+				sanitized.append(ch);
+			}
+		}
+		return sanitized.toString();
 	}
 
 }

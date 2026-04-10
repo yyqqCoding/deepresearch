@@ -22,12 +22,13 @@ import com.alibaba.cloud.ai.example.deepresearch.model.enums.StreamNodePrefixEnu
 import com.alibaba.cloud.ai.example.deepresearch.model.dto.Plan;
 import com.alibaba.cloud.ai.example.deepresearch.model.multiagent.AgentSelectionResult;
 import com.alibaba.cloud.ai.example.deepresearch.service.McpProviderFactory;
+import com.alibaba.cloud.ai.example.deepresearch.service.ResearchMcpToolCallbackAdapter;
+import com.alibaba.cloud.ai.example.deepresearch.service.ResearchSearchOrchestrator;
 import com.alibaba.cloud.ai.example.deepresearch.service.SearchFilterService;
-import com.alibaba.cloud.ai.example.deepresearch.service.SearchInfoService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentDispatcherService;
 import com.alibaba.cloud.ai.example.deepresearch.service.multiagent.SmartAgentSelectionHelperService;
 import com.alibaba.cloud.ai.example.deepresearch.tool.MemoryGetTool;
-import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchTool;
+import com.alibaba.cloud.ai.example.deepresearch.tool.MemorySearchSupport;
 import com.alibaba.cloud.ai.example.deepresearch.tool.SearchFilterTool;
 import com.alibaba.cloud.ai.example.deepresearch.util.*;
 import com.alibaba.cloud.ai.example.deepresearch.util.convert.FluxConverter;
@@ -36,8 +37,6 @@ import com.alibaba.cloud.ai.graph.GraphResponse;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
 import com.alibaba.cloud.ai.graph.streaming.StreamingOutput;
-import com.alibaba.cloud.ai.toolcalling.jinacrawler.JinaCrawlerConstants;
-import com.alibaba.cloud.ai.toolcalling.jinacrawler.JinaCrawlerService;
 import com.alibaba.cloud.ai.toolcalling.searches.SearchEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +45,17 @@ import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.mcp.AsyncMcpToolCallbackProvider;
+import org.springframework.ai.tool.ToolCallback;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +66,8 @@ import java.util.stream.Collectors;
 public class ResearcherNode implements NodeAction {
 
 	private static final Logger logger = LoggerFactory.getLogger(ResearcherNode.class);
+
+	private static final Set<String> RESEARCH_MCP_SEARCH_TOOL_NAMES = Set.of("search_web");
 
 	private final ChatClient researchAgent;
 
@@ -77,33 +82,33 @@ public class ResearcherNode implements NodeAction {
 
 	private final SearchFilterService searchFilterService;
 
-	private final SearchInfoService searchInfoService;
-
 	private final SmartAgentSelectionHelperService smartAgentSelectionHelper;
 
-	private final boolean jinaCrawlerAvailable;
-
 	// Long-term memory tools (optional, may be null)
-	private final MemorySearchTool memorySearchTool;
+	private final MemorySearchSupport memorySearchTool;
 
 	private final MemoryGetTool memoryGetTool;
+
+	private final ResearchSearchOrchestrator researchSearchOrchestrator;
+
+	private final int researchMcpExtraSources;
 
 	public ResearcherNode(ChatClient researchAgent, String executorNodeId, ReflectionProcessor reflectionProcessor,
 			McpProviderFactory mcpFactory, SearchFilterService searchFilterService,
 			SmartAgentDispatcherService smartAgentDispatcher, SmartAgentProperties smartAgentProperties,
-			JinaCrawlerService jinaCrawlerService, MemorySearchTool memorySearchTool, MemoryGetTool memoryGetTool) {
+			MemorySearchSupport memorySearchTool, MemoryGetTool memoryGetTool, int researchMcpExtraSources) {
 		this.researchAgent = researchAgent;
 		this.executorNodeId = executorNodeId;
 		this.nodeName = "researcher_" + executorNodeId;
 		this.reflectionProcessor = reflectionProcessor;
 		this.mcpFactory = mcpFactory;
 		this.searchFilterService = searchFilterService;
-		this.searchInfoService = new SearchInfoService(jinaCrawlerService, searchFilterService, null);
 		this.smartAgentSelectionHelper = AgentIntegrationUtil.createSelectionHelper(smartAgentProperties,
 				smartAgentDispatcher, null, null);
-		this.jinaCrawlerAvailable = jinaCrawlerService != null;
 		this.memorySearchTool = memorySearchTool;
 		this.memoryGetTool = memoryGetTool;
+		this.researchSearchOrchestrator = new ResearchSearchOrchestrator();
+		this.researchMcpExtraSources = researchMcpExtraSources;
 	}
 
 	@Override
@@ -147,30 +152,9 @@ public class ResearcherNode implements NodeAction {
 					"IMPORTANT: DO NOT include inline citations in the text. Instead, track all sources and include a References section at the end using link reference format. Include an empty line between each citation for better readability. Use this format for each reference:\\n- [Source Title](URL)\\n- [Source Title](URL)");
 			messages.add(citationMessage);
 
-			List<String> runtimeToolNames = new ArrayList<>();
-			runtimeToolNames.add("searchFilterTool");
-			if (jinaCrawlerAvailable) {
-				runtimeToolNames.add(JinaCrawlerConstants.TOOL_NAME);
-			}
-			if (memorySearchTool != null) {
-				runtimeToolNames.add("memorySearch");
-			}
-			if (memoryGetTool != null) {
-				runtimeToolNames.add("memoryGet");
-			}
-			messages.add(new UserMessage("Runtime available tools for this request (strict): "
-					+ String.join(", ", runtimeToolNames)
-					+ ". Only call tools in this list by exact name. If a tool is not in this list, do not call it. "
-					+ "Call at most one tool per assistant message, wait for the tool result, and then decide whether another tool is needed. "
-					+ "CRITICAL RULE: Maximum 3 tool calls allowed. If you have already used tools, analyze the existing results and output the final response. DO NOT repeat similar searches in a loop."));
-
 			logger.debug("{} Node messages: {}", nodeName, messages);
 
-			SearchEnum searchEnum = state.value("search_engine", SearchEnum.class).orElse(null);
-			SearchEnum effectiveSearchEnum = searchEnum != null ? searchEnum : SearchEnum.TAVILY;
 			boolean enableSearchFilter = state.value("enable_search_filter", true);
-			SearchFilterTool searchFilterTool = new SearchFilterTool(searchFilterService, effectiveSearchEnum,
-					enableSearchFilter);
 
 			AgentSelectionResult agentSelection = selectSmartAgent(assignedStep, taskContent, state);
 			ChatClient selectedAgent = agentSelection.getSelectedAgent();
@@ -178,51 +162,24 @@ public class ResearcherNode implements NodeAction {
 			// 将智能Agent的状态更新合并到updated中
 			updated.putAll(agentSelection.getStateUpdate());
 
-			// Call agent
-			var requestSpec = selectedAgent.prompt()
-				.options(DashScopeChatOptions.builder().withParallelToolCalls(false).build());
+				AsyncMcpToolCallbackProvider mcpProvider = mcpFactory != null
+						? mcpFactory.createProvider(state, "researchAgent") : null;
+				ToolCallback[] researchMcpToolCallbacks = prepareResearchMcpToolCallbacks(
+						mcpProvider != null ? mcpProvider.getToolCallbacks() : null, researchMcpExtraSources);
+				boolean hasMcpTools = researchMcpToolCallbacks.length > 0;
+				logFilteredResearchMcpTools(mcpProvider, researchMcpToolCallbacks);
+				String researchSearchMode = StateUtil.getResearchSearchMode(state);
+				ResearchSearchOrchestrator.ResearchSearchExecution searchExecution = researchSearchOrchestrator.execute(
+						researchSearchMode, hasMcpTools,
+						() -> invokeResearchAttempt(selectedAgent, messages, researchMcpToolCallbacks, true,
+								enableSearchFilter),
+						() -> invokeResearchAttempt(selectedAgent, messages, null, false, enableSearchFilter));
+				putResearchSearchState(updated, executorNodeId, searchExecution);
+				logger.info("ResearcherNode {} route={} fallbackReason={}", executorNodeId, searchExecution.route(),
+						searchExecution.fallbackReason());
 
-			// 使用MCP工厂创建MCP提供者
-			AsyncMcpToolCallbackProvider mcpProvider = mcpFactory != null
-					? mcpFactory.createProvider(state, "researchAgent") : null;
-			if (mcpProvider != null) {
-				requestSpec = requestSpec.toolCallbacks(mcpProvider.getToolCallbacks());
-			}
-			if (jinaCrawlerAvailable) {
-				requestSpec = requestSpec.toolNames(JinaCrawlerConstants.TOOL_NAME);
-			}
-
-			// Ensure prompt-declared built-in search tool is always available at runtime.
-			if (memorySearchTool != null && memoryGetTool != null) {
-				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool, memoryGetTool);
-			}
-			else if (memorySearchTool != null) {
-				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool);
-			}
-			else {
-				requestSpec = requestSpec.tools(searchFilterTool);
-			}
-
-			List<Map<String, String>> siteInformation = new ArrayList<>();
-			Object obj = state.value("site_information", new ArrayList<Map<String, String>>());
-			if (obj instanceof List<?>) {
-				siteInformation = (List<Map<String, String>>) obj;
-			}
-
-			List<Map<String, String>> searchResults = searchInfoService.searchInfo(enableSearchFilter,
-					effectiveSearchEnum, originTaskContent);
-			siteInformation.addAll(searchResults);
-			updated.put("site_information", siteInformation);
-
-			messages.add(new UserMessage("以下是搜索结果：\n\n" + searchResults.stream().map(r -> {
-				return String.format("标题: %s\n权重: %s\n内容: %s\nurl: %s\n", r.get("title"), r.get("weight"),
-						r.get("content"), r.get("url"));
-			}).collect(Collectors.joining("\n\n"))));
-
-			Flux<ChatResponse> streamResult = requestSpec.messages(messages)
-				.stream()
-				.chatResponse()
-				.doOnError(error -> StateUtil.handleStepError(assignedStep, nodeName, error, logger));
+			ChatResponse finalResponse = createCompletedChatResponse(searchExecution.content());
+			Flux<ChatResponse> streamResult = Flux.just(finalResponse);
 
 			// Add step title
 			boolean isReflectionNode = assignedStep.getReflectionHistory() != null
@@ -288,6 +245,130 @@ public class ResearcherNode implements NodeAction {
 			.append("\n\n");
 
 		return content.toString();
+	}
+
+	private String invokeResearchAttempt(ChatClient selectedAgent, List<Message> baseMessages,
+			ToolCallback[] mcpToolCallbacks, boolean mcpFirstAttempt, boolean enableSearchFilter) {
+		List<Message> attemptMessages = buildAttemptMessages(baseMessages, mcpFirstAttempt, mcpToolCallbacks);
+		var requestSpec = selectedAgent.prompt()
+			.options(DashScopeChatOptions.builder().withParallelToolCalls(false).build());
+
+		if (mcpFirstAttempt) {
+			if (mcpToolCallbacks != null && mcpToolCallbacks.length > 0) {
+				requestSpec = requestSpec.toolCallbacks(mcpToolCallbacks);
+			}
+			if (memorySearchTool != null && memoryGetTool != null) {
+				requestSpec = requestSpec.tools(memorySearchTool, memoryGetTool);
+			}
+			else if (memorySearchTool != null) {
+				requestSpec = requestSpec.tools(memorySearchTool);
+			}
+			else if (memoryGetTool != null) {
+				requestSpec = requestSpec.tools(memoryGetTool);
+			}
+		}
+		else {
+			SearchFilterTool searchFilterTool = new SearchFilterTool(searchFilterService, SearchEnum.TAVILY,
+					enableSearchFilter);
+			if (memorySearchTool != null && memoryGetTool != null) {
+				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool, memoryGetTool);
+			}
+			else if (memorySearchTool != null) {
+				requestSpec = requestSpec.tools(searchFilterTool, memorySearchTool);
+			}
+			else if (memoryGetTool != null) {
+				requestSpec = requestSpec.tools(searchFilterTool, memoryGetTool);
+			}
+			else {
+				requestSpec = requestSpec.tools(searchFilterTool);
+			}
+		}
+
+		return requestSpec.messages(attemptMessages).call().chatResponse().getResult().getOutput().getText();
+	}
+
+	private List<Message> buildAttemptMessages(List<Message> baseMessages, boolean mcpFirstAttempt,
+			ToolCallback[] mcpToolCallbacks) {
+		List<Message> attemptMessages = new ArrayList<>(baseMessages);
+		attemptMessages.add(new UserMessage(buildRuntimeToolMessage(mcpFirstAttempt, mcpToolCallbacks)));
+		attemptMessages.add(new UserMessage(mcpFirstAttempt
+				? "This is the MCP-first research attempt. Use only MCP tools exposed by the runtime schema for external retrieval. searchFilterTool is not available in this attempt. If MCP tools are unavailable, fail, time out, or return no usable evidence, output exactly [[FALLBACK_TO_TAVILY:<reason>]] and nothing else. Valid reasons: no_mcp_tool, tool_error, timeout, empty_result, no_usable_evidence."
+				: "This is the Tavily fallback attempt. searchFilterTool is available in this attempt. Use it for web retrieval when needed and continue the research normally."));
+		return attemptMessages;
+	}
+
+	private String buildRuntimeToolMessage(boolean mcpFirstAttempt, ToolCallback[] mcpToolCallbacks) {
+		List<String> runtimeToolNames = new ArrayList<>();
+		if (mcpFirstAttempt && mcpToolCallbacks != null && mcpToolCallbacks.length > 0) {
+			runtimeToolNames.addAll(Arrays.stream(mcpToolCallbacks)
+				.map(toolCallback -> toolCallback.getToolDefinition().name())
+				.toList());
+		}
+		else if (!mcpFirstAttempt) {
+			runtimeToolNames.add("searchFilterTool");
+		}
+		if (memorySearchTool != null) {
+			runtimeToolNames.add("memorySearch");
+		}
+		if (memoryGetTool != null) {
+			runtimeToolNames.add("memoryGet");
+		}
+		if (runtimeToolNames.isEmpty()) {
+			runtimeToolNames.add("none");
+		}
+		return "Runtime available tools for this request (strict): " + String.join(", ", runtimeToolNames)
+				+ ". Only call tools in this list or in the runtime tool schema. If a tool is not available in this attempt, do not call it. Call at most one tool per assistant message, wait for the tool result, and then decide whether another tool is needed. CRITICAL RULE: Maximum 3 tool calls allowed. If you have already used tools, analyze the existing results and output the final response. DO NOT repeat similar searches in a loop.";
+	}
+
+	static ToolCallback[] filterResearchMcpToolCallbacks(ToolCallback[] toolCallbacks) {
+		if (toolCallbacks == null || toolCallbacks.length == 0) {
+			return new ToolCallback[0];
+		}
+		return Arrays.stream(toolCallbacks)
+			.filter(Objects::nonNull)
+			.filter(toolCallback -> RESEARCH_MCP_SEARCH_TOOL_NAMES.contains(toolCallback.getToolDefinition().name()))
+			.toArray(ToolCallback[]::new);
+	}
+
+	static ToolCallback[] prepareResearchMcpToolCallbacks(ToolCallback[] toolCallbacks, int researchMcpExtraSources) {
+		return Arrays.stream(filterResearchMcpToolCallbacks(toolCallbacks))
+			.map(toolCallback -> ResearchMcpToolCallbackAdapter.wrapSearchCallback(toolCallback, researchMcpExtraSources))
+			.toArray(ToolCallback[]::new);
+	}
+
+	static void putResearchSearchState(Map<String, Object> updated, String executorNodeId,
+			ResearchSearchOrchestrator.ResearchSearchExecution searchExecution) {
+		updated.put(StateUtil.getResearchSearchRouteKey(executorNodeId), searchExecution.route());
+		if (searchExecution.fallbackReason() != null) {
+			updated.put(StateUtil.getResearchSearchFallbackReasonKey(executorNodeId), searchExecution.fallbackReason());
+		}
+	}
+
+	private void logFilteredResearchMcpTools(AsyncMcpToolCallbackProvider mcpProvider, ToolCallback[] filteredCallbacks) {
+		if (mcpProvider == null) {
+			return;
+		}
+		ToolCallback[] allCallbacks = mcpProvider.getToolCallbacks();
+		if (allCallbacks.length == filteredCallbacks.length) {
+			return;
+		}
+		Set<String> filteredNames = Arrays.stream(filteredCallbacks)
+			.map(toolCallback -> toolCallback.getToolDefinition().name())
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+		List<String> excludedNames = Arrays.stream(allCallbacks)
+			.map(toolCallback -> toolCallback.getToolDefinition().name())
+			.filter(name -> !filteredNames.contains(name))
+			.toList();
+		logger.info("ResearcherNode {} filtered MCP tools for research attempt. allowed={} excluded={}", executorNodeId,
+				filteredNames, excludedNames);
+	}
+
+	private ChatResponse createCompletedChatResponse(String content) {
+		org.springframework.ai.chat.messages.AssistantMessage message = new org.springframework.ai.chat.messages.AssistantMessage(
+				content);
+		org.springframework.ai.chat.model.Generation generation = new org.springframework.ai.chat.model.Generation(
+				message);
+		return new ChatResponse(List.of(generation));
 	}
 
 	/**

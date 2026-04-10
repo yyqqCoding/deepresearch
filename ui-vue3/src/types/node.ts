@@ -26,6 +26,8 @@ export interface NormalNode {
   nodeName: string
   /** 节点内容 */
   content: string | any
+  /** 部分节点会直接附带最终输出 */
+  output?: string | any
   graphId: GraphId
   displayTitle: string
   siteInformation: SiteInformation[]

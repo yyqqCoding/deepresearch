@@ -19,9 +19,10 @@ package com.alibaba.cloud.ai.example.deepresearch.util.mcp;
 import com.alibaba.cloud.ai.example.deepresearch.config.McpAssignNodeProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.modelcontextprotocol.client.transport.WebFluxSseClientTransport;
+import io.modelcontextprotocol.json.jackson.JacksonMcpJsonMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.ai.mcp.client.autoconfigure.NamedClientMcpTransport;
+import org.springframework.ai.mcp.client.common.autoconfigure.NamedClientMcpTransport;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.ArrayList;
@@ -121,7 +122,7 @@ public class McpConfigMergeUtil {
 			String sseEndpoint = serverInfo.sseEndpoint() != null ? serverInfo.sseEndpoint() : "/sse";
 			WebFluxSseClientTransport transport = WebFluxSseClientTransport.builder(webClientBuilder)
 				.sseEndpoint(sseEndpoint)
-				.objectMapper(objectMapper)
+				.jsonMapper(new JacksonMcpJsonMapper(objectMapper))
 				.build();
 			String transportName = agentName + "-" + serverInfo.url().hashCode();
 			transports.add(new NamedClientMcpTransport(transportName, transport));

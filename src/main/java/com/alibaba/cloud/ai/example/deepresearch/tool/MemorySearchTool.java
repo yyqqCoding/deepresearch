@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
  *
  * @author deepresearch
  */
-public class MemorySearchTool {
+public class MemorySearchTool implements MemorySearchSupport {
 
 	private static final Logger logger = LoggerFactory.getLogger(MemorySearchTool.class);
 

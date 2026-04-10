@@ -17,10 +17,12 @@
 package com.alibaba.cloud.ai.example.deepresearch.node;
 
 import com.alibaba.cloud.ai.example.deepresearch.config.ShortTermMemoryProperties;
+import com.alibaba.cloud.ai.example.deepresearch.config.LongTermMemoryProperties;
 import com.alibaba.cloud.ai.example.deepresearch.model.enums.StreamNodePrefixEnum;
 import com.alibaba.cloud.ai.example.deepresearch.model.enums.ParallelEnum;
 import com.alibaba.cloud.ai.example.deepresearch.model.SessionHistory;
 import com.alibaba.cloud.ai.example.deepresearch.model.dto.Plan;
+import com.alibaba.cloud.ai.example.deepresearch.model.dto.memory.MemoryScope;
 import com.alibaba.cloud.ai.example.deepresearch.model.req.GraphId;
 import com.alibaba.cloud.ai.example.deepresearch.service.LongTermMemoryService;
 import com.alibaba.cloud.ai.example.deepresearch.service.ReportService;
@@ -72,17 +74,21 @@ public class ReporterNode implements NodeAction {
 
 	private final LongTermMemoryService longTermMemoryService;
 
+	private final LongTermMemoryProperties longTermMemoryProperties;
+
 	private static final String RESEARCH_FORMAT = "# Research Requirements\n\n## Task\n\n{0}\n\n## Description\n\n{1}";
 
 	public ReporterNode(ChatClient reporterAgent, ReportService reportService,
 			SessionContextService sessionContextService, MessageWindowChatMemory messageWindowChatMemory,
-			ShortTermMemoryProperties shortTermMemoryProperties, LongTermMemoryService longTermMemoryService) {
+			ShortTermMemoryProperties shortTermMemoryProperties, LongTermMemoryService longTermMemoryService,
+			LongTermMemoryProperties longTermMemoryProperties) {
 		this.reporterAgent = reporterAgent;
 		this.reportService = reportService;
 		this.sessionContextService = sessionContextService;
 		this.messageWindowChatMemory = messageWindowChatMemory;
 		this.shortTermMemoryProperties = shortTermMemoryProperties;
 		this.longTermMemoryService = longTermMemoryService;
+		this.longTermMemoryProperties = longTermMemoryProperties;
 	}
 
 	@Override
@@ -157,10 +163,11 @@ public class ReporterNode implements NodeAction {
 					logger.info("Report saved successfully, Thread ID: {}", threadId);
 
 					// Flush to long-term memory (async, non-blocking)
-					if (longTermMemoryService != null) {
-						logger.info("Triggering long-term memory flush for Thread ID: {}", threadId);
-						longTermMemoryService.flushMemory(userQuery, finalReport);
-					}
+						if (longTermMemoryService != null) {
+							logger.info("Triggering long-term memory flush for Thread ID: {}", threadId);
+							MemoryScope memoryScope = MemoryScope.fromProperties(longTermMemoryProperties, sessionId, threadId);
+							longTermMemoryService.flushMemory(memoryScope, userQuery, finalReport);
+						}
 				}
 				catch (Exception e) {
 					logger.error("Failed to save report, Thread ID: {}", threadId, e);

@@ -35,6 +35,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -161,6 +163,36 @@ class GraphProcessExceptionHandlingTest {
 		assertTrue(completed.get(), "流程应该正常完成");
 		
 		verify(generator, times(2)).next();
+	}
+
+	@Test
+	void testCoordinatorNodeIncludesDirectAnswerInEventPayload() throws Exception {
+		OverAllState state = mock(OverAllState.class);
+		when(nodeOutput.node()).thenReturn("coordinator");
+		when(nodeOutput.state()).thenReturn(state);
+		when(state.data()).thenReturn(Map.of("deep_research", false, "output", "你叫李勇青。"));
+		when(state.value("site_information")).thenReturn(Optional.empty());
+
+		Sinks.Many<ServerSentEvent<String>> sink = Sinks.many().unicast().onBackpressureBuffer();
+		CountDownLatch eventLatch = new CountDownLatch(1);
+		CountDownLatch completeLatch = new CountDownLatch(1);
+		AtomicReference<String> payload = new AtomicReference<>();
+
+		sink.asFlux().subscribe(event -> {
+			payload.set(event.data());
+			eventLatch.countDown();
+		}, error -> {
+			fail("不应该有错误: " + error.getMessage());
+		}, completeLatch::countDown);
+
+		graphProcess.processStream(graphId, Flux.just(nodeOutput), sink);
+
+		assertTrue(eventLatch.await(5, TimeUnit.SECONDS), "应该在5秒内收到 coordinator 事件");
+		assertTrue(completeLatch.await(5, TimeUnit.SECONDS), "应该在5秒内完成流");
+		assertNotNull(payload.get(), "coordinator 事件内容不应为空");
+		assertTrue(payload.get().contains("\"nodeName\":\"coordinator\""), "应该输出 coordinator 节点");
+		assertTrue(payload.get().contains("\"content\":false"), "应该保留 deep_research 标记");
+		assertTrue(payload.get().contains("\"output\":\"你叫李勇青。\""), "应该输出 direct answer");
 	}
 
 	@Test

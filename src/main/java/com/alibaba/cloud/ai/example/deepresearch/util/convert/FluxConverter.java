@@ -49,14 +49,13 @@ public interface FluxConverter {
 		}
 
 		public Flux<GraphResponse<StreamingOutput>> build(Flux<ChatResponse> flux) {
-			return this.buildInternal(flux,
-					(chatResponse) -> new StreamingOutput(chatResponse.getResult().getOutput().getText(),
-							this.startingNode, this.startingState));
+			return this.buildInternal(flux, (chatResponse) -> new StreamingOutput<>(
+					chatResponse.getResult().getOutput(), chatResponse, this.startingNode, null, this.startingState));
 		}
 
 		public Flux<GraphResponse<StreamingOutput>> buildWithChatResponse(Flux<ChatResponse> flux) {
-			return this.buildInternal(flux,
-					(chatResponse) -> new StreamingOutput(chatResponse, this.startingNode, this.startingState));
+			return this.buildInternal(flux, (chatResponse) -> new StreamingOutput<>(
+					chatResponse.getResult().getOutput(), chatResponse, this.startingNode, null, this.startingState));
 		}
 
 		private Flux<GraphResponse<StreamingOutput>> buildInternal(Flux<ChatResponse> flux,
@@ -77,10 +76,13 @@ public interface FluxConverter {
 						String lastMessageText = Objects.requireNonNull(lastResponse.getResult().getOutput().getText(),
 								"lastResponse text cannot be null");
 						String currentMessageText = currentMessage.getText();
-						AssistantMessage newMessage = new AssistantMessage(
-								currentMessageText != null ? lastMessageText.concat(currentMessageText)
-										: lastMessageText,
-								currentMessage.getMetadata(), currentMessage.getToolCalls(), currentMessage.getMedia());
+						AssistantMessage newMessage = AssistantMessage.builder()
+							.content(currentMessageText != null ? lastMessageText.concat(currentMessageText)
+									: lastMessageText)
+							.properties(currentMessage.getMetadata())
+							.toolCalls(currentMessage.getToolCalls())
+							.media(currentMessage.getMedia())
+							.build();
 						Generation newGeneration = new Generation(newMessage, response.getResult().getMetadata());
 						return new ChatResponse(List.of(newGeneration), response.getMetadata());
 					}

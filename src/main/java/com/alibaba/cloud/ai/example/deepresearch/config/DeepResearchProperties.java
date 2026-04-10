@@ -17,7 +17,6 @@
 package com.alibaba.cloud.ai.example.deepresearch.config;
 
 import com.alibaba.cloud.ai.toolcalling.searches.SearchEnum;
-import com.google.common.collect.Maps;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.HashMap;
@@ -42,12 +41,18 @@ public class DeepResearchProperties {
 	/**
 	 * McpClient mapping for Agent name. key=Agent name, value=McpClient Name
 	 */
-	private Map<String, Set<String>> mcpClientMapping = Maps.newHashMap();
+	private Map<String, Set<String>> mcpClientMapping = new HashMap<>();
 
 	/**
 	 * 图执行的最大迭代次数
 	 */
 	private int maxIterations = 50;
+
+	/**
+	 * Default extra_sources injected into research MCP search tools when the model does
+	 * not provide a positive value.
+	 */
+	private int researchMcpExtraSources = 2;
 
 	public Map<String, Integer> getParallelNodeCount() {
 		return parallelNodeCount;
@@ -71,6 +76,14 @@ public class DeepResearchProperties {
 
 	public void setMaxIterations(int maxIterations) {
 		this.maxIterations = maxIterations;
+	}
+
+	public int getResearchMcpExtraSources() {
+		return researchMcpExtraSources;
+	}
+
+	public void setResearchMcpExtraSources(int researchMcpExtraSources) {
+		this.researchMcpExtraSources = researchMcpExtraSources;
 	}
 
 	private List<SearchEnum> searchList = List.of();

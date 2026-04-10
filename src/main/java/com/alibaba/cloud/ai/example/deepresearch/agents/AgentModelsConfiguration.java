@@ -115,7 +115,6 @@ public class AgentModelsConfiguration implements InitializingBean {
 						.toolCallingManager(toolCallingManager)
 						.defaultOptions(DashScopeChatOptions.builder()
 							.withModel(model.modelName())
-							.withTemperature(DashScopeChatModel.DEFAULT_TEMPERATURE)
 							.withParallelToolCalls(false)
 							.build())
 						.build(),

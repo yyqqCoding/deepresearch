@@ -35,6 +35,11 @@ public class LongTermMemoryProperties {
 	private boolean enabled = false;
 
 	/**
+	 * Long-term memory provider. Supported values: local, mem0.
+	 */
+	private String provider = "local";
+
+	/**
 	 * Workspace root path for memory files. Defaults to ~/.deepresearch/workspace. Memory
 	 * files will be stored under {workspacePath}/memory/.
 	 */
@@ -49,6 +54,11 @@ public class LongTermMemoryProperties {
 	 * Memory search (vector + semantic) configuration.
 	 */
 	private MemorySearch memorySearch = new MemorySearch();
+
+	/**
+	 * Mem0 provider configuration.
+	 */
+	private Mem0 mem0 = new Mem0();
 
 	public boolean isEnabled() {
 		return enabled;
@@ -80,6 +90,22 @@ public class LongTermMemoryProperties {
 
 	public void setMemorySearch(MemorySearch memorySearch) {
 		this.memorySearch = memorySearch;
+	}
+
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+
+	public Mem0 getMem0() {
+		return mem0;
+	}
+
+	public void setMem0(Mem0 mem0) {
+		this.mem0 = mem0;
 	}
 
 	/**
@@ -231,6 +257,110 @@ public class LongTermMemoryProperties {
 
 		public void setEmbeddingCacheSize(int embeddingCacheSize) {
 			this.embeddingCacheSize = embeddingCacheSize;
+		}
+
+	}
+
+	public static class Mem0 {
+
+		private String baseUrl = "https://api.mem0.ai";
+
+		private String apiKey;
+
+		private String orgId;
+
+		private String projectId;
+
+		private String userId = "liyongqing";
+
+		private String appId = "deepresearch";
+
+		private int topK = 5;
+
+		private boolean inferOnWrite = true;
+
+		private boolean asyncMode = true;
+
+		private String customInstructions;
+
+		public String getBaseUrl() {
+			return baseUrl;
+		}
+
+		public void setBaseUrl(String baseUrl) {
+			this.baseUrl = baseUrl;
+		}
+
+		public String getApiKey() {
+			return apiKey;
+		}
+
+		public void setApiKey(String apiKey) {
+			this.apiKey = apiKey;
+		}
+
+		public String getOrgId() {
+			return orgId;
+		}
+
+		public void setOrgId(String orgId) {
+			this.orgId = orgId;
+		}
+
+		public String getProjectId() {
+			return projectId;
+		}
+
+		public void setProjectId(String projectId) {
+			this.projectId = projectId;
+		}
+
+		public String getUserId() {
+			return userId;
+		}
+
+		public void setUserId(String userId) {
+			this.userId = userId;
+		}
+
+		public String getAppId() {
+			return appId;
+		}
+
+		public void setAppId(String appId) {
+			this.appId = appId;
+		}
+
+		public int getTopK() {
+			return topK;
+		}
+
+		public void setTopK(int topK) {
+			this.topK = topK;
+		}
+
+		public boolean isInferOnWrite() {
+			return inferOnWrite;
+		}
+
+		public void setInferOnWrite(boolean inferOnWrite) {
+			this.inferOnWrite = inferOnWrite;
+		}
+
+		public boolean isAsyncMode() {
+			return asyncMode;
+		}
+
+		public void setAsyncMode(boolean asyncMode) {
+			this.asyncMode = asyncMode;
+		}
+
+		public String getCustomInstructions() {
+			return customInstructions;
+		}
+
+		public void setCustomInstructions(String customInstructions) {
+			this.customInstructions = customInstructions;
 		}
 
 	}

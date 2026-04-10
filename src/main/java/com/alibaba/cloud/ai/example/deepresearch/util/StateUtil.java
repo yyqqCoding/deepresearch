@@ -30,6 +30,28 @@ import java.util.Optional;
 
 public class StateUtil {
 
+	public static final String RESEARCH_SEARCH_MODE = "research_search_mode";
+
+	public static final String RESEARCH_SEARCH_ROUTE = "research_search_route";
+
+	public static final String RESEARCH_SEARCH_FALLBACK_REASON = "research_search_fallback_reason";
+
+	public static final String RESEARCH_SEARCH_MODE_MCP_FIRST_FALLBACK_TAVILY = "mcp_first_fallback_tavily";
+
+	public static final String RESEARCH_SEARCH_ROUTE_MCP = "mcp";
+
+	public static final String RESEARCH_SEARCH_ROUTE_TAVILY_FALLBACK = "tavily_fallback";
+
+	public static final String FALLBACK_REASON_NO_MCP_TOOL = "no_mcp_tool";
+
+	public static final String FALLBACK_REASON_TOOL_ERROR = "tool_error";
+
+	public static final String FALLBACK_REASON_TIMEOUT = "timeout";
+
+	public static final String FALLBACK_REASON_EMPTY_RESULT = "empty_result";
+
+	public static final String FALLBACK_REASON_NO_USABLE_EVIDENCE = "no_usable_evidence";
+
 	public static final String EXECUTION_STATUS_ASSIGNED_PREFIX = "assigned_";
 
 	public static final String EXECUTION_STATUS_PROCESSING_PREFIX = "processing_";
@@ -41,6 +63,14 @@ public class StateUtil {
 	public static final String EXECUTION_STATUS_WAITING_PROCESSING = "waiting_processing_";
 
 	public static final String EXECUTION_STATUS_ERROR_PREFIX = "error_";
+
+	public static String getResearchSearchRouteKey(String executorNodeId) {
+		return RESEARCH_SEARCH_ROUTE + "_" + executorNodeId;
+	}
+
+	public static String getResearchSearchFallbackReasonKey(String executorNodeId) {
+		return RESEARCH_SEARCH_FALLBACK_REASON + "_" + executorNodeId;
+	}
 
 	/**
 	 * Handle step execution error by setting error status and logging
@@ -124,6 +154,10 @@ public class StateUtil {
 
 	public static boolean isDeepresearch(OverAllState state) {
 		return state.value("enable_deepresearch", true);
+	}
+
+	public static String getResearchSearchMode(OverAllState state) {
+		return state.value(RESEARCH_SEARCH_MODE, RESEARCH_SEARCH_MODE_MCP_FIRST_FALLBACK_TAVILY);
 	}
 
 }
